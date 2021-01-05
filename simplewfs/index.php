@@ -103,6 +103,9 @@ else{
     $context  = stream_context_create($opts);
     $response = file_get_contents($wfsURL.$_SERVER['QUERY_STRING'],false,$context);
 }
+foreach($http_response_header as $key=>$value){
+    header($value);
+}
 echo $response;
 
 function dataAccess($dataList, $requestedData){

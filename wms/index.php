@@ -242,6 +242,9 @@ else{
         if (dataAccess($dataList, $finalRequestedDataArray, $geoserverWorkspacePrefix)){
         $requestURL= $requestURL . $parameters;
         $response = file_get_contents($requestURL);
+        foreach($http_response_header as $key=>$value){
+            header($value);
+        }
         echo $response;
     }
     else{

@@ -2,7 +2,8 @@
 require '../../support/pass.php';
 require '../../support/dbcon.php';
 require '../../support/user.php';
-header('Access-Control-Allow-Origin: *'); 
+$originUrl = $baseURL . "regionalroads.com";
+header('Access-Control-Allow-Origin: ' . $originUrl); 
 header("Access-Control-Allow-Credentials: true");
 header('Access-Control-Allow-Methods: GET, PUT, POST, DELETE, OPTIONS');
 header('Access-Control-Max-Age: 1000');
@@ -35,6 +36,7 @@ EOD;
     $criteriaArray[$mapName]=$mapNameCriteria;
 }
 else{
+    http_response_code(401);
     echo '{"error":"Invalid parameters"}';
     die();
 }

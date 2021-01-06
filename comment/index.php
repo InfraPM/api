@@ -33,6 +33,7 @@ if (isset($_GET['m'])){
         $dataList = $user->getDataList(FALSE, "read");
         $dataArray = array($dataset);
         if ($user->dataAccess($dataList, $dataArray)!=TRUE){
+            http_response_code(401);
             echo '{"error": "You do not have access to the requested data"}';
             die();
         }
@@ -108,6 +109,7 @@ EOD;
             $dataList = $curUser->getDataList(FALSE, "comment");
             $curDataJson = $curUser->getDatalistElement($dataList, $curDataset);
             if ($curUser->dataAccess($dataList, $dataArray)!=TRUE){
+                http_response_code(401);
                 echo '{"error": "You do not have access to the requested data"}';
                 die();
         }
@@ -184,6 +186,7 @@ EOD;
             $schemaName = $dataJson["schemaname"];
             $curUser->spatialDataSchemaName = $schemaName;
             if ($curUser->dataAccess($dataList, $dataArray)!=TRUE){
+                http_response_code(401);
                 echo '{"error": "You do not have access to the requested data"}';
                 die();
             }
@@ -247,11 +250,13 @@ EOD;
         }
     }
     else{
+        http_response_code(400);
         echo '{"error": "Invalid Parameters"}';
         die();
     }
 }
 else{
+    http_response_code(400);
     echo '{"error": "Invalid Parameters"}';
     die();
 }

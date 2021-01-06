@@ -13,7 +13,8 @@ if (!empty($_GET['token'])){
     $token = $_GET['token'];
 }
 else{
-    echo '{"response": "Access Denied"}';
+    http_response_code(401);
+    echo '{"error": "Access Denied"}';
     die();
 }
 $dbCon = new dbcon($host, $port, $db, $dbuser, $dbpassword);

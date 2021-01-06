@@ -19,11 +19,13 @@ if(isset($_GET['token'])  && isset($_GET['table'])){
     $dataList = $user->getDataList();
     $requestedData = array($data);
     if(dataAccess($dataList, $requestedData)==FALSE){
-            echo '{"error": "You do not have access to the requested data"}';
-            die();
+        http_response_code(401);
+        echo '{"error": "You do not have access to the requested data"}';
+        die();
         }
 }
 else{
+    http_response_code(400);
     echo '{"error": "Parameters not set"}';
     die();
 }

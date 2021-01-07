@@ -66,7 +66,7 @@ while ($row = pg_fetch_assoc($result)){
     if ($rowCount==0){
         fputcsv($out,array_keys($resultArray));
     }
-    unset($row['Shape']);
+    $row['Shape']='';
     //var_dump($row);
     fputcsv($out, $row);
     $rowCount+=1;

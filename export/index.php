@@ -4,13 +4,20 @@ require '../../support/dbcon.php';
 require '../../support/user.php';
 $originUrl = $baseURL . "regionalroads.com";
 $dbCon = new dbcon($host, $port, $db, $dbuser, $dbpassword);
-if (isset($_GET['token'])){
-    $token =  $_GET['token'];
+$rawPost=file_get_contents("php://input");
+$postData = json_decode($rawPost, TRUE);
+if (isset($postData['token'])){
+    $token =  $postData['token'];
 }
 else{
-    http_response_code(400);
-    echo '{"error": "Invalid parameters"}';
-    die();
+    if (isset($_GET['token'])){
+        $token = $_GET['token'];
+    }
+    else{
+        http_response_code(400);
+        echo '{"error": "Invalid parameters"}';
+        die();
+    }
 }
 if (isset($_GET['data'])){
     $datasets = $_GET['data'];
@@ -34,6 +41,7 @@ header('Access-Control-Max-Age: 1000');
 header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token , Authorization');
 header('Content-Description: File Transfer');
 header('Content-Type: application/octet-stream');
+header('Content-Type: text/html');
 header('Expires: 0');
 header('Cache-Control: must-revalidate');
 header('Pragma: public');
@@ -72,6 +80,7 @@ while ($row = pg_fetch_assoc($result)){
     $rowCount+=1;
 }
 fclose($out);
+
 function dataAccess($dataList, $requestedData){
     $array= json_decode($dataList,true);
     $trueCount=0;

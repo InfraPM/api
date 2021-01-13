@@ -23,7 +23,7 @@ if (isset($_GET['referenceId'])){
     $parameterCount+=1;
     $referenceId = $_GET['referenceId'];
     $referenceIdCriteria = <<<EOD
-"id" = $$parameterCount
+"id" = $parameterCount
 EOD;
     $criteriaArray[$referenceId]= $referenceIdCriteria;
 }
@@ -82,4 +82,5 @@ while($row=pg_fetch_assoc($result)){
     $returnJson = $row['options'];
 }
 echo $returnJson;
+
 ?>

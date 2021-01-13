@@ -8,8 +8,10 @@ header("Access-Control-Allow-Credentials: true");
 header('Access-Control-Allow-Methods: GET, PUT, POST, DELETE, OPTIONS');
 header('Access-Control-Max-Age: 1000');
 header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token , Authorization');
-if(isset($_GET['token'])  && isset($_GET['table'])){
-    $token = $_GET['token'];
+$rawPost=file_get_contents("php://input");
+$postData = json_decode($rawPost, TRUE);
+if(isset($postData['token'])  && isset($_GET['table'])){
+    $token = $postData['token'];
     $data = $_GET['table'];
     $dbCon0 = new dbcon($host, $port, $db, $dbuser, $dbpassword);
     $user = new User();
@@ -96,7 +98,6 @@ if (isset($_GET['table'])){
     $jsonText.="]";
     echo $jsonText;
 }
-
 function dataAccess($dataList, $requestedData){
     $array= json_decode($dataList,true);
     $trueCount=0;

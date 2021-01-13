@@ -3,12 +3,14 @@ require '../../support/pass.php';
 require '../../support/dbcon.php';
 require '../../support/user.php';
 $originUrl = $baseURL . "regionalroads.com";
-header('Access-Control-Allow-Origin: ' . $originUrl); 
+header('Access-Control-Allow-Origin: ' . $originUrl);
 header("Access-Control-Allow-Credentials: true");
 header('Access-Control-Allow-Methods: GET, PUT, POST, DELETE, OPTIONS');
 header('Access-Control-Max-Age: 1000');
 header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token , Authorization');
 $parameters = "";
+$rawPost=file_get_contents("php://input");
+$postData = json_decode($rawPost, TRUE);
 if (isset($_POST['format'])){
     header('Content-Type: text/html');
 }
@@ -43,16 +45,16 @@ if (strtolower($request)=='getlegendgraphic'){
     $headerString = 'Content-Type: ' . $format;
     header($headerString);
 }
-if (isset($_POST['token'])){
-    $token = $_POST['token'];
+if (isset($postData['token'])){
+    $token = $postData['token'];
     $public = FALSE;
 }
 elseif (isset($_GET['token'])){
     $token = $_GET['token'];
     $public = FALSE;
-}
-elseif (isset($_POST['TOKEN'])){
-    $token = $_POST['TOKEN'];
+    }
+elseif (isset($postData['TOKEN'])){
+    $token = $postData['TOKEN'];
     $public = FALSE;
 }
 elseif (isset($_GET['TOKEN'])){
@@ -246,6 +248,8 @@ else{
             header($value);
         }
         echo $response;
+
+
     }
     else{
         http_response_code(401);

@@ -62,7 +62,9 @@ if (isset($_GET['table'])){
         if (!empty($resultRows3)){
             $distinctList = $resultRows3['column_name'];
         }
-        $sql2 = 'SELECT DISTINCT "'. $distinctList . '", "' .$row['foreign_column_name'] . '" FROM "' .$row['foreign_table_schema'] . '"."' . $row['foreign_table_name'] . '" ORDER BY "'. $distinctList . '"';
+        //possible refinement -> ORDER BY "SortOrder" column in lookup tables to allow custom sorting
+        //try this first then on failure use default sorting
+        $sql2 = 'SELECT DISTINCT "'. $distinctList . '", "' .$row['foreign_column_name'] . '", "SortOrder" AS "SortOrder" FROM "' .$row['foreign_table_schema'] . '"."' . $row['foreign_table_name'] . '" ORDER BY "'. $row['foreign_table_name'] .'"."SortOrder"';
         $dbCon2->query($sql2);
         $result2 = $dbCon2->result;
         $foreignTableValueString = '"values": [';
@@ -75,18 +77,20 @@ if (isset($_GET['table'])){
             $foreignTableValueString.="{";
             $rowCount2 = 0;
             foreach($rw as $key=>$value){
-                if ($rowCount2>0){
-                    $foreignTableValueString.=",";
+                if ($key!="SortOrder"){
+                    if ($rowCount2>0){
+                        $foreignTableValueString.=",";
+                    }
+                    if ($key==$row['foreign_column_name']){
+                    $foreignTableValueString.='"id":'.$value;
+                    }
+                    else{
+                        $valueType = gettype($value);
+                        $foreignTableValueString.='"value":"'.$value.'",';
+                        $foreignTableValueString.='"valueType":"'.gettype($value).'"';                    
+                    }                
+                    $rowCount2+=1;
                 }
-                if ($key==$row['foreign_column_name']){
-                  $foreignTableValueString.='"id":'.$value;
-                }
-                else{
-                $valueType = gettype($value);
-                $foreignTableValueString.='"value":"'.$value.'",';
-                $foreignTableValueString.='"valueType":"'.gettype($value).'"';
-                }
-                $rowCount2+=1;
             }
             $foreignTableValueString.="}";
             $rCount+=1;

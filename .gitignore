@@ -6,3 +6,7 @@
 .html~
 .css#
 .css~
+vendor/
+tests/
+/composer.json
+/composer.lock

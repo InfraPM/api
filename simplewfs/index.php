@@ -1,7 +1,7 @@
 <?php
-require '../../support/pass.php';
-require '../../support/dbcon.php';
-require '../../support/user.php';
+//require '../../support/pass.php';
+//require '../../support/dbcon.php';
+require '../../support/User.php';
 $originUrl = $baseURL . "regionalroads.com";
 header('Access-Control-Allow-Origin: ' . $originUrl);
 header("Access-Control-Allow-Credentials: true");
@@ -46,10 +46,10 @@ if (isset($_GET['download'])) {
 } else {
 	$download = FALSE;
 }
-$dbCon = new dbcon($host, $port, $db, $dbuser, $dbpassword);
+$dbCon = new DbCon($_ENV['host'], $_ENV['port'], $_ENV['db'], $_ENV['dbuser'], $_ENV['dbpassword']);
 $user = new User();
 $user->setDbCon($dbCon);
-$user->token = $token;
+$user->setToken($token);
 $user->getUserFromToken();
 //if ($_SERVER['REQUEST_METHOD']=="GET"){
 if (count($_GET) > 0) {
@@ -118,8 +118,7 @@ if (count($_GET) == 0) {
 	);
 	$context  = stream_context_create($opts);
 	$response = file_get_contents($wfsURL, false, $context);
-} 
-else {
+} else {
 	$opts = array(
 		'http' =>
 		array(
@@ -228,11 +227,12 @@ function getFid($rawPost)
 	$json = json_encode($xml);
 	$array = json_decode($json, TRUE);
 }
-function removeToken($queryString){
+function removeToken($queryString)
+{
 	$explode = explode("&", $queryString);
 	$returnQueryString = array();
-	foreach($explode as $key=>$value){
-		if (strpos($value, "token")===FALSE){			
+	foreach ($explode as $key => $value) {
+		if (strpos($value, "token") === FALSE) {
 			array_push($returnQueryString, $value);
 		}
 	}

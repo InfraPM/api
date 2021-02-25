@@ -190,10 +190,13 @@ EOD;
         }
         if ($successCount == count($postData)) {
             $this->apiResponse->setBody('{"Status": "Success", "AddedComments": ' . $successCount . ' }');
+            $this->user->logEvent("Add Comment", $this->apiRequest->postVar);
         } else if ($successCount == 0) {
             $this->apiResponse->setBody('{"Status": "Failure", "AddedComments": ' . $successCount . ' }');
+            $this->user->logEvent("Add Comment Error", $this->apiRequest->postVar);
         } else {
             $this->apiResponse->setBody('{"Status": "Partial Success", "AddedComments": ' . $successCount . ' }');
+            $this->user->logEvent("Add Comment Error", $this->apiRequest->postVar);
         }
         $this->apiResponse->setHttpCode(200);
     }
@@ -226,7 +229,7 @@ EOD;
             $dataArray = array($curDataset);
             $dataJson = $this->user->getDataListElement($dataList, $curDataset);
             $schemaName = $dataJson["schemaname"];
-            $this->user->spatialDataSchemaName = $schemaName;
+            $this->user->setSpatialDataSchemaName($schemaName);
             if ($this->user->dataAccess($dataList, $dataArray) != TRUE) {
                 $this->apiResponse->httpCode(401);
                 $this->apiResponse->body('{"error": "You do not have access to the requested data"}');
@@ -282,10 +285,13 @@ EOD;
         }
         if (count($successArray) == count($postData)) {
             $this->apiResponse->setBody('{"Status": "Success", "UpdatedFeatures": ' . count($successArray) . ' }');
+            $this->user->logEvent("Update Comment", $this->apiRequest->postVar);
         } else if (count($successArray) == 0) {
             $this->apiResponse->setBody('{"Status": "Failure", "UpdatedFeatures": ' . count($successArray) . ' }');
+            $this->user->logEvent("Update Comment Error", $this->apiRequest->postVar);
         } else {
             $this->apiResponse->setBody('{"Status": "Partial Success", "UpdatedFeatures": ' . count($successArray) . ' }');
+            $this->user->logEvent("Update Comment Error", $this->apiRequest->postVar);
         }
         $this->apiResponse->setHttpCode(200);
     }

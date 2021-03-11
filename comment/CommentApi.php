@@ -55,9 +55,10 @@ class CommentApi extends Api
         }
         $this->user->setToken($token);
         $this->user->getUserFromToken();
+        $this->user->checkToken();
         $dataList = $this->user->getDataList(FALSE, "read");
         $dataArray = array($dataset);
-        if ($this->user->dataAccess($dataList, $dataArray) != TRUE) {
+        if ($this->user->dataAccess($dataList, $dataArray) != TRUE or $this->user->tokenExpired) {
             $this->apiResponse->setBody('{"error": "You do not have access to the requested data"}');
             $this->apiResponse->setHttpCode(401);
             $this->sendResponse();
@@ -138,11 +139,12 @@ EOD;
             $curToken = $i['token'];
             $this->user->setToken($curToken);
             $this->user->getUserFromToken();
+            $this->user->checkToken();
             $curDataset = $i['data'];
             $dataArray = array($curDataset);
             $dataList = $this->user->getDataList(FALSE, "comment");
             $curDataJson = $this->user->getDatalistElement($dataList, $curDataset);
-            if ($this->user->dataAccess($dataList, $dataArray) != TRUE) {
+            if ($this->user->dataAccess($dataList, $dataArray) != TRUE or $this->user->tokenExpired) {
                 $this->apiResponse->setHttpCode(401);
                 $this->apiRepsonse->setBody('{"error": "You do not have access to the requested data"}');
                 $this->sendResponse();
@@ -220,6 +222,7 @@ EOD;
             $curToken = $i['token'];
             $this->user->setToken($curToken);
             $this->user->getUserFromToken();
+            $this->user->checkToken();
             $curComment = $i['comment'];
             $curStatus = $i['commentStatus'];
             $curType = $i['commentType'];
@@ -230,7 +233,7 @@ EOD;
             $dataJson = $this->user->getDataListElement($dataList, $curDataset);
             $schemaName = $dataJson["schemaname"];
             $this->user->setSpatialDataSchemaName($schemaName);
-            if ($this->user->dataAccess($dataList, $dataArray) != TRUE) {
+            if ($this->user->dataAccess($dataList, $dataArray) != TRUE or $this->user->tokenExpired) {
                 $this->apiResponse->httpCode(401);
                 $this->apiResponse->body('{"error": "You do not have access to the requested data"}');
             }

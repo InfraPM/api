@@ -48,6 +48,7 @@ EOD;
             $token = $postData['token'];
             $this->user->setToken($token);
             $this->user->getUserFromToken();
+            $this->user->checkToken();
             $this->user->validate();
             if ($this->user->exists() == FALSE) {
                 $publicValue = 't';
@@ -87,7 +88,7 @@ EOD;
         while ($row = pg_fetch_assoc($result)) {
             $returnJson = $row['options'];
         }
-        if ($returnJson != NULL) {
+        if ($returnJson != NULL and $this->user->tokenExpired == FALSE) {
             $this->apiResponse->setHttpCode(200);
             $this->apiResponse->setBody($returnJson);
         } else {

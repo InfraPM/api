@@ -74,6 +74,7 @@ class WmsApi extends Api
         if ($this->public == FALSE) {
             $this->user->setToken($this->token);
             $this->user->getUserFromToken();
+            //$this->user->checkToken();
             $this->dataList = $this->user->getDataList();
         } else {
             $this->dataList = $this->user->getDataList($this->public);
@@ -189,7 +190,11 @@ class WmsApi extends Api
             $this->apiResponse->setHttpCode(200);
             $this->apiRepsonse->setBody($xml->asXML());
         } else {
-            if ($this->user->dataAccess($this->dataList, $finalRequestedDataArray, $_ENV['geoserverWorkspacePrefix'])) {
+            $this->user->checkToken();
+            if (
+                $this->user->dataAccess($this->dataList, $finalRequestedDataArray, $_ENV['geoserverWorkspacePrefix'])
+                and $this->user->tokenExpired == FALSE
+            ) {
                 $requestURL = $requestURL . $this->parameters;
                 $response = file_get_contents($requestURL);
                 $finalHeader = array_merge($http_response_header, $this->apiResponse->headers);
@@ -198,7 +203,11 @@ class WmsApi extends Api
                 }*/
                 $this->apiResponse->setHeaders($finalHeader);
                 $this->apiResponse->setHttpCode(200);
-                $this->apiResponse->setFormat($this->format);
+                if (strtolower($this->request) == "getfeatureinfo") {
+                    $this->apiResponse->setFormat("text/html");
+                } else {
+                    $this->apiResponse->setFormat($this->format);
+                }
                 $this->apiResponse->setBody($response);
             } else {
                 $this->apiResponse->setHttpCode(401);

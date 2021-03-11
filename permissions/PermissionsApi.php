@@ -31,6 +31,7 @@ class PermissionsApi extends Api
         //$token = $postData['token'];
         $this->user->setToken($token);
         $this->user->getUserFromToken();
+        $this->user->checkToken();
         $dataList = $this->user->getDataList(FALSE, "read");
         $jsonDataList = json_decode($dataList, TRUE);
         $returnString = "{";
@@ -93,7 +94,12 @@ class PermissionsApi extends Api
             $count += 1;
         }
         $returnString .= "]}";
-        $this->apiResponse->setBody($returnString);
-        $this->apiResponse->setHttpCode(200);
+        if ($this->user->tokenExpired) {
+            $this->apiResponse->setHttpCode(401);
+            $this->apiResponse->setBody('{"error":"Token expired"}');
+        } else {
+            $this->apiResponse->setBody($returnString);
+            $this->apiResponse->setHttpCode(200);
+        }
     }
 }

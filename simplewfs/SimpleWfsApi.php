@@ -25,23 +25,28 @@ class SimpleWfsApi extends Api
     {
         $error = FALSE;
         $this->outputFormat = "application/xml";
-        $postData = new SimpleXMLElement($this->apiRequest->postVar);
-        if (isset($postData->token)) {
-            $this->token = $postData->token;
-        } else if (isset($postData[0])) {
-            $this->token = $postData[0];
-        } else {
-            $this->apiResponse->setHttpCode(401);
-            $this->apiResponse->setFormat($this->outputFormat);
-            $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?>
+        if ($this->apiRequest->postVar != NULL) {
+            $postData = new SimpleXMLElement($this->apiRequest->postVar);
+            if (isset($postData->token)) {
+                $this->token = $postData->token;
+            } else if (isset($postData[0])) {
+                $this->token = $postData[0];
+            } else {
+                $this->apiResponse->setHttpCode(401);
+                $this->apiResponse->setFormat($this->outputFormat);
+                $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?>
        <WFSerror>
        <error>You do not have access to the specified data</error>
        </WFSerror>');
-            $error = TRUE;
-            $this->event = "WFS Request Error";
+                $error = TRUE;
+                $this->event = "WFS Request Error";
+            }
         }
-        $this->user->setToken($this->token);
-        $this->user->getUserFromToken();
+        if ($this->token != NULL) {
+            $this->user->setToken($this->token);
+            $this->user->getUserFromToken();
+            $this->user->checkToken();
+        }
         if (count($this->apiRequest->getVar) > 0) {
             if (isset($this->apiRequest->getVar['outputFormat'])) {
                 $this->outputFormat = $_GET['outputFormat'];
@@ -70,6 +75,20 @@ class SimpleWfsApi extends Api
             } else {
                 $this->request = NULL;
             }
+            $this->user->setToken($this->token);
+            $this->user->getUserFromToken();
+            $this->user->checkToken();
+            if ($this->user->tokenExpired) {
+                $this->apiResponse->setHttpCode(401);
+                $this->apiResponse->setFormat($this->outputFormat);
+                $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?>
+       <WFSerror>
+       <error>You do not have access to the specified data</error>
+       </WFSerror>');
+                $error = TRUE;
+                $this->event = "WFS Request Error";
+            }
+
             if ($this->request == 'DescribeFeatureType') {
                 $this->dataList = $this->user->getDataList(FALSE, "read");
                 $this->event = "WFS Describe Feature Request";
@@ -85,11 +104,9 @@ class SimpleWfsApi extends Api
                 $this->dataList = $this->user->getDataList(FALSE, "modify");
                 $this->event = "WFS Update Feature Request";
             } else if (strpos($this->apiRequest->postVar, "wfs:Insert") != FALSE) {
-                echo "insert";
                 $this->dataList = $this->user->getDataList(FALSE, "insert");
                 $this->event = "WFS Insert Feature Request";
             } else if (strpos($this->apiRequest->postVar, "wfs:Delete") != FALSE) {
-                echo "delete";
                 $this->dataList = $this->user->getDataList(FALSE, "delete");
                 $this->event = "WFS Delete Feature Request";
             }
@@ -163,6 +180,8 @@ class SimpleWfsApi extends Api
         $this->apiResponse->setHeaders($headerArray);
         if ($this->outputFormat == "application/json" && $this->download == TRUE) {
             header('Content-Disposition: attachment; filename=' . $this->typeNames . '.json');
+        } else if ($this->outputFormat == "application/vnd.google-earth.kml xml" && $this->download == TRUE) {
+            header('Content-Disposition: attachment; filename=' . $this->typeNames . '.kml');
         }
         $this->apiResponse->setHttpCode(200);
         $this->apiResponse->setBody($response);

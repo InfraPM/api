@@ -113,7 +113,7 @@ class SimpleWfsApi extends Api
             $errorRequestBody = $this->apiRequest->postVar;
         }
         $this->workspace = $this->user->getWorkspace($this->dataList, $this->typeNames, $_ENV['geoserverWorkspacePrefix']);
-        if ($this->user->dataAccess($this->dataList, array($this->typeNames)) == FALSE) {
+        if ($this->user->dataAccess($this->dataList, array($this->typeNames), "", "wfs") == FALSE) {
             $this->apiResponse->setHttpCode(401);
             $this->apiResponse->setFormat($this->outputFormat);
             $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?><WFSerror><error>You do not have access to the specified data</error></WFSerror>');

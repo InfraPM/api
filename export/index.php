@@ -45,7 +45,7 @@ header('Pragma: public');
 header('Content-Type: csv');
 $csvSql = "";
 $layerCount = 0;
-if ($user->dataAccess($dataList, $layerArray) != TRUE) {
+if ($user->dataAccess($dataList, $layerArray, "", "wfs") != TRUE) {
     http_response_code(401);
     echo '{"error": "You do not have access to the requested data"}';
     die();

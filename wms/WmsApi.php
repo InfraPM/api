@@ -37,11 +37,19 @@ class WmsApi extends Api
             $this->format = $this->apiRequest->getVar['format'];
         }
         if (isset($this->apiRequest->getVar['token'])) {
+            if ($this->apiRequest->getVar['token'] == 'public' or $this->apiRequest->getVar['token'] == '') {
+                $this->public = TRUE;
+            } else {
+                $this->public = FALSE;
+            }
             $this->token = $this->apiRequest->getVar['token'];
-            $this->public = FALSE;
         } elseif (isset($this->apiRequest->getVar['TOKEN'])) {
+            if ($this->apiRequest->getVar['TOKEN'] == 'public' or $this->apiRequest->getVar['TOKEN'] == '') {
+                $this->public = TRUE;
+            } else {
+                $this->public = FALSE;
+            }
             $this->token = $this->apiRequest->getVar['TOKEN'];
-            $this->public = FALSE;
         } else {
             $this->public = TRUE;
         }
@@ -77,6 +85,8 @@ class WmsApi extends Api
             //$this->user->checkToken();
             $this->dataList = $this->user->getDataList();
         } else {
+            $this->user->setToken($this->token);
+            $this->user->getUserFromToken();
             $this->dataList = $this->user->getDataList($this->public);
         }
 

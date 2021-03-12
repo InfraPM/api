@@ -177,7 +177,7 @@ class WmsApi extends Api
             $toDelete = array();
             foreach ($xml->Capability->Layer->Layer as $key1 => $value1) {
                 $dataArray = array($value1->Name);
-                if (dataAccess($this->dataList, $dataArray, $_ENV['geoserverWorkspacePrefix']) == FALSE) {
+                if (dataAccess($this->dataList, $dataArray, $_ENV['geoserverWorkspacePrefix'], "wms") == FALSE) {
                     array_push($toDelete, $xml->Capability->Layer->Layer[$elementCount]);
                 }
                 $elementCount += 1;
@@ -192,7 +192,7 @@ class WmsApi extends Api
         } else {
             $this->user->checkToken();
             if (
-                $this->user->dataAccess($this->dataList, $finalRequestedDataArray, $_ENV['geoserverWorkspacePrefix'])
+                $this->user->dataAccess($this->dataList, $finalRequestedDataArray, $_ENV['geoserverWorkspacePrefix'], "wms")
                 and $this->user->tokenExpired == FALSE
             ) {
                 $requestURL = $requestURL . $this->parameters;

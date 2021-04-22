@@ -1,5 +1,5 @@
 <?php
-require '../Api.php';
+require __DIR__ . '/../Api.php';
 class WmsApi extends Api
 {
     private $request;

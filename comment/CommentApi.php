@@ -1,5 +1,5 @@
 <?php
-require '../Api.php';
+require __DIR__ . '/../Api.php';
 
 class CommentApi extends Api
 {
@@ -126,7 +126,8 @@ EOD;
      * "featureId":"baz",
      * "comment":"biz",
      * "commentStatus":"buz",
-     * "commentType":"boz"}]
+     * "commentType":"boz",
+     * "replyId": "bez"}]
      */
     public function addComments(): void
     {

@@ -1,5 +1,5 @@
 <?php
-require '../Api.php';
+require __DIR__ . '/../Api.php';
 class ForeignKeysApi extends Api
 {
     public function __construct()
@@ -21,7 +21,7 @@ class ForeignKeysApi extends Api
     {
         $postData = json_decode($this->apiRequest->postVar, TRUE);
         $token = $postData['token'];
-        $table = $_GET['table'];
+        $table = $this->apiRequest->getVar['table'];
         $this->user->setToken($token);
         $this->user->getUserFromToken();
         $this->user->checkToken();

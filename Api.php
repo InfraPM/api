@@ -1,7 +1,7 @@
 <?php
-require 'ApiRequest.php';
-require 'ApiResponse.php';
-require '../../support/User.php';
+require __DIR__ . '/ApiRequest.php';
+require __DIR__ . '/ApiResponse.php';
+require __DIR__ . '/../support/User.php';
 
 class Api
 {

@@ -1,5 +1,5 @@
 <?php
-require '../Api.php';
+require __DIR__ . '/../Api.php';
 class MapOptionsApi extends Api
 {
     private $schemaName;
@@ -40,7 +40,7 @@ EOD;
         } else {
             $this->apiResponse->setHttpCode(401);
             $this->apiResponse->setBody('{"error":"Invalid parameters"}');
-            $this->sendResponse();
+            $error = TRUE;
         }
         $publicCriteria = "";
         if (isset($postData['token'])) {
@@ -61,7 +61,9 @@ EOD;
             $publicValue = 't';
             $criteriaArray[$publicValue] = $publicCriteria;
         }
-        $this->getMapOptions($criteriaArray);
+        if ($error == FALSE) {
+            $this->getMapOptions($criteriaArray);
+        }
     }
     /**
      * Format the API Response based on the API Request

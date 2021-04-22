@@ -1,5 +1,5 @@
 <?php
-require '../Api.php';
+require __DIR__ . '/../Api.php';
 class SimpleWfsApi extends Api
 {
     private $service;
@@ -25,14 +25,14 @@ class SimpleWfsApi extends Api
     {
         $error = FALSE;
         $this->outputFormat = "application/xml";
-        if ($this->apiRequest->postVar != NULL) {
+        if ($this->apiRequest->postVar != '') {
             $postData = new SimpleXMLElement($this->apiRequest->postVar);
             if (isset($postData->token)) {
                 $this->token = $postData->token;
             } else if (isset($postData[0])) {
                 $this->token = $postData[0];
             } else {
-                $this->apiResponse->setHttpCode(401);
+                $this->apiResponse->setHttpCode(400);
                 $this->apiResponse->setFormat($this->outputFormat);
                 $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?>
        <WFSerror>
@@ -49,11 +49,16 @@ class SimpleWfsApi extends Api
         }
         if (count($this->apiRequest->getVar) > 0) {
             if (isset($this->apiRequest->getVar['outputFormat'])) {
-                $this->outputFormat = $_GET['outputFormat'];
+                $this->outputFormat = $this->apiRequest->getVar['outputFormat'];
             }
             if (isset($this->apiRequest->getVar['token'])) {
                 $this->token = $this->apiRequest->getVar['token'];
-            }
+                $this->user->setToken($this->token);
+                $this->user->getUserFromToken();
+                $this->user->checkToken();
+            } //else {
+            //$this->token = '';
+            //}
             if (isset($this->apiRequest->getVar['download'])) {
                 if ($this->apiRequest->getVar['download'] == "true") {
                     $this->download = TRUE;
@@ -63,23 +68,26 @@ class SimpleWfsApi extends Api
             } else {
                 $this->download = FALSE;
             }
-            if (isset($_GET['typeNames'])) {
-                $this->typeNames = $_GET['typeNames'];
-            } else if (isset($_GET['typeName'])) {
-                $this->typeNames = $_GET['typeName'];
+            if (isset($this->apiRequest->getVar['typeNames'])) {
+                $this->typeNames = $this->apiRequest->getVar['typeNames'];
+            } else if (isset($this->apiRequest->getVar['typeName'])) {
+                $this->typeNames = $this->apiRequest->getVar['typeName'];
             }
-            if (isset($_GET['request'])) {
-                $this->request = $_GET['request'];
-            } else if (isset($_GET['REQUEST'])) {
-                $this->request = $_GET['REQUEST'];
+            if (isset($this->apiRequest->getVar['request'])) {
+                $this->request = $this->apiRequest->getVar['request'];
+            } else if (isset($this->apiRequest->getVar['REQUEST'])) {
+                $this->request = $this->apiRequest->getVar['REQUEST'];
             } else {
                 $this->request = NULL;
+            }
+            if ($this->token == NULL) {
+                $this->token = '';
             }
             $this->user->setToken($this->token);
             $this->user->getUserFromToken();
             $this->user->checkToken();
             if ($this->user->tokenExpired) {
-                $this->apiResponse->setHttpCode(401);
+                $this->apiResponse->setHttpCode(400);
                 $this->apiResponse->setFormat($this->outputFormat);
                 $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?>
        <WFSerror>
@@ -88,7 +96,6 @@ class SimpleWfsApi extends Api
                 $error = TRUE;
                 $this->event = "WFS Request Error";
             }
-
             if ($this->request == 'DescribeFeatureType') {
                 $this->dataList = $this->user->getDataList(FALSE, "read");
                 $this->event = "WFS Describe Feature Request";
@@ -124,7 +131,10 @@ class SimpleWfsApi extends Api
             $this->apiResponse->setFormat($this->outputFormat);
             $this->generateResponse();
         } else {
-            //ar_dump($this->user);
+            $this->apiResponse->setHttpCode(401);
+            $this->apiResponse->setFormat($this->outputFormat);
+            $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?><WFSerror><error>You do not have access to the specified data</error></WFSerror>');
+            $this->event = "WFS Request Error";
             $this->user->logEvent($this->event, $errorRequestBody);
         }
     }
@@ -137,7 +147,7 @@ class SimpleWfsApi extends Api
         $user = $_ENV['wfsUser'];
         $password = $_ENV['wfsPassword'];
         $encoded = base64_encode($user . ":" . $password);
-        if (count($_GET) == 0) {
+        if (count($this->apiRequest->getVar) == 0) {
             $opts = array(
                 'http' =>
                 array(

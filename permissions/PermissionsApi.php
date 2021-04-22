@@ -1,5 +1,5 @@
 <?php
-require '../Api.php';
+require __DIR__ . '/../Api.php';
 class PermissionsApi extends Api
 {
 
@@ -96,7 +96,7 @@ class PermissionsApi extends Api
         $returnString .= "]}";
         if ($this->user->tokenExpired) {
             $this->apiResponse->setHttpCode(401);
-            $this->apiResponse->setBody('{"error":"Token expired"}');
+            $this->apiResponse->setBody('{"error":"Unathorized"}');
         } else {
             $this->apiResponse->setBody($returnString);
             $this->apiResponse->setHttpCode(200);

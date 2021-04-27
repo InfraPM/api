@@ -2,6 +2,7 @@
 require __DIR__ . '/../Api.php';
 class PermissionsApi extends Api
 {
+    private $mode;
 
     public function __construct()
     {
@@ -20,6 +21,14 @@ class PermissionsApi extends Api
             $this->apiResponse->setHttpCode(400);
             $this->apiResponse->setBody('{"error":"Invalid Parameters"}');
         } else {
+            if (isset($this->apiRequest->getVar['mode'])) {
+                $this->mode = $this->apiRequest->getVar['mode'];
+                if ($this->mode != 'app' && $this->mode != 'data') {
+                    $this->mode = 'data';
+                }
+            } else {
+                $this->mode = "data";
+            }
             $this->getPermissions($postData['token']);
         }
     }
@@ -32,7 +41,11 @@ class PermissionsApi extends Api
         $this->user->setToken($token);
         $this->user->getUserFromToken();
         $this->user->checkToken();
-        $dataList = $this->user->getDataList(FALSE, "read");
+        if ($this->mode == 'app') {
+            $dataList = $this->user->getAppList(FALSE, "read");
+        } else {
+            $dataList = $this->user->getDataList(FALSE, "read");
+        }
         $jsonDataList = json_decode($dataList, TRUE);
         $returnString = "{";
         $returnString .= '"read": [';
@@ -46,7 +59,11 @@ class PermissionsApi extends Api
             $count += 1;
         }
         $returnString .= "],";
-        $modifyDataList = $this->user->getDataList(FALSE, "modify");
+        if ($this->mode == 'app') {
+            $modifyDataList = $this->user->getAppList(FALSE, "modify");
+        } else {
+            $modifyDataList = $this->user->getDataList(FALSE, "modify");
+        }
         $jsonModifyDataList = json_decode($modifyDataList, TRUE);
         $returnString .= '"modify": [';
         $count = 0;
@@ -58,7 +75,11 @@ class PermissionsApi extends Api
             $count += 1;
         }
         $returnString .= "],";
-        $deleteDataList = $this->user->getDataList(FALSE, "delete");
+        if ($this->mode == 'app') {
+            $deleteDataList = $this->user->getAppList(FALSE, "delete");
+        } else {
+            $deleteDataList = $this->user->getDataList(FALSE, "delete");
+        }
         $jsonDeleteDataList = json_decode($deleteDataList, TRUE);
         $returnString .= '"delete": [';
         $count = 0;
@@ -70,7 +91,11 @@ class PermissionsApi extends Api
             $count += 1;
         }
         $returnString .= "],";
-        $insertDataList = $this->user->getDataList(FALSE, "insert");
+        if ($this->mode == 'app') {
+            $insertDataList = $this->user->getAppList(FALSE, "insert");
+        } else {
+            $insertDataList = $this->user->getDataList(FALSE, "insert");
+        }
         $jsonInsertDataList = json_decode($insertDataList, TRUE);
         $returnString .= '"insert": [';
         $count = 0;
@@ -82,7 +107,11 @@ class PermissionsApi extends Api
             $count += 1;
         }
         $returnString .= "],";
-        $commentDataList = $this->user->getDataList(FALSE, "comment");
+        if ($this->mode == 'app') {
+            $commentDataList = $this->user->getAppList(FALSE, "comment");
+        } else {
+            $commentDataList = $this->user->getDataList(FALSE, "comment");
+        }
         $jsonCommentDataList = json_decode($commentDataList, TRUE);
         $returnString .= '"comment": [';
         $count = 0;

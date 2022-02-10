@@ -22,14 +22,19 @@ class Api
         $this->setDbCon($dbCon);
         $this->setUser($user);
         $baseURL = $_ENV['baseURL'];
+        $TRPURL = $_ENV['TRPAppURL'];
         $originUrl = $baseURL . "regionalroads.com";
+        $allowedOrigins = [$TRPURL, $originUrl];
         $headers = array(
-            'Access-Control-Allow-Origin' => $originUrl,
             'Access-Control-Allow-Credentials' => 'true',
             'Access-Control-Allow-Methods' => 'GET, PUT, POST, DELETE, OPTIONS',
             'Access-Control-Max-Age' => '1000',
             'Access-Control-Allow-Headers' => 'Origin, Content-Type, X-Auth-Token , Authorization'
         );
+        if (in_array($_SERVER["HTTP_ORIGIN"], $allowedOrigins)) {
+            $headers['Access-Control-Allow-Origin'] = $_SERVER["HTTP_ORIGIN"];
+        }
+
         $this->apiResponse->setHeaders($headers);
     }
     /**

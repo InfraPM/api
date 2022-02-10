@@ -50,16 +50,6 @@ EOD;
             $this->user->getUserFromToken();
             $this->user->checkToken();
             $this->user->validate();
-            if ($this->user->exists() == FALSE) {
-                $publicValue = 't';
-                $publicCriteria = <<<EOD
-"public"=$$parameterCount;
-EOD;
-                $criteriaArray[$publicValue] = $publicCriteria;
-            }
-        } else {
-            $publicValue = 't';
-            $criteriaArray[$publicValue] = $publicCriteria;
         }
         if ($error == FALSE) {
             $this->getMapOptions($criteriaArray);

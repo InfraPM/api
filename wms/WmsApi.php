@@ -187,7 +187,7 @@ class WmsApi extends Api
             $toDelete = array();
             foreach ($xml->Capability->Layer->Layer as $key1 => $value1) {
                 $dataArray = array($value1->Name);
-                if (dataAccess($this->dataList, $dataArray, $_ENV['geoserverWorkspacePrefix'], "wms") == FALSE) {
+                if ($this->user->dataAccess($this->dataList, $dataArray, $_ENV['geoserverWorkspacePrefix'], "wms") == FALSE) {
                     array_push($toDelete, $xml->Capability->Layer->Layer[$elementCount]);
                 }
                 $elementCount += 1;

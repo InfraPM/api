@@ -51,6 +51,7 @@ class WmsApi extends Api
             }
             $this->token = $this->apiRequest->getVar['TOKEN'];
         } else {
+            $this->token = 'public';
             $this->public = TRUE;
         }
         if (isset($this->apiRequest->getVar['query_layers'])) {
@@ -198,7 +199,7 @@ class WmsApi extends Api
             }
             $this->apiResponse->setFormat("application/xml");
             $this->apiResponse->setHttpCode(200);
-            $this->apiRepsonse->setBody($xml->asXML());
+            $this->apiResponse->setBody($xml->asXML());
         } else {
             $this->user->checkToken();
             if (

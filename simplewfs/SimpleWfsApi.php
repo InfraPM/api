@@ -143,7 +143,7 @@ class SimpleWfsApi extends Api
      */
     public function generateResponse(): void
     {
-        $wfsURL = "http://regionalroads.com:8080/geoserver/" . $this->workspace . "/wfs?";
+        $wfsURL = $_ENV['baseGeoserverURL'] . "/" . $this->workspace . "/wfs?";
         $user = $_ENV['wfsUser'];
         $password = $_ENV['wfsPassword'];
         $encoded = base64_encode($user . ":" . $password);
@@ -157,7 +157,12 @@ class SimpleWfsApi extends Api
                         'Authorization: Basic ' . $encoded
                     ),
                     'content' => $this->apiRequest->postVar
+                ),
+                "ssl" => array(
+                    "verify_peer" => false,
+                    "verify_peer_name" => false,
                 )
+
             );
             $context  = stream_context_create($opts);
             $response = file_get_contents($wfsURL, false, $context);
@@ -171,7 +176,11 @@ class SimpleWfsApi extends Api
                         'Content-Type: application/xml',
                         'Authorization: Basic ' . $encoded
                     )
-                )
+                ),
+                "ssl" => array(
+                    "verify_peer" => false,
+                    "verify_peer_name" => false,
+                ),
             );
             $context  = stream_context_create($opts);
             $fullURL = $wfsURL . $this->removeToken($_SERVER['QUERY_STRING']);

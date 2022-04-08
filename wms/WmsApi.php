@@ -172,10 +172,16 @@ class WmsApi extends Api
                 $count += 1;
             }
         }
-        $requestURL = "http://regionalroads.com:8080/geoserver/wms?";
+        $requestURL = $_ENV['baseGeoserverURL'] . "/wms?";
+        $arrContextOptions = array(
+            "ssl" => array(
+                "verify_peer" => false,
+                "verify_peer_name" => false,
+            ),
+        );
         if (strtolower($this->request) == 'getcapabilities') {
             $requestURL = $requestURL . $this->parameters;
-            $response = file_get_contents($requestURL);
+            $response = file_get_contents($requestURL, false, stream_context_create($arrContextOptions));
             global $baseGeoserverURL, $baseAPIURL;
             $finalResponse = str_replace($baseGeoserverURL, $baseAPIURL, $response);
             if ($this->public == FALSE) {
@@ -207,7 +213,8 @@ class WmsApi extends Api
                 and $this->user->tokenExpired == FALSE
             ) {
                 $requestURL = $requestURL . $this->parameters;
-                $response = file_get_contents($requestURL);
+                $response = file_get_contents($requestURL, false, stream_context_create($arrContextOptions));
+                //var_dump($response);
                 $finalHeader = array_merge($http_response_header, $this->apiResponse->headers);
                 /*foreach ($http_response_header as $key => $value) {
                     header($value);

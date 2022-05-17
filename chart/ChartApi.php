@@ -10,6 +10,7 @@ class ChartApi extends Api
     private $error;
     private $token;
     private $dataList;
+    private $nullCategory;
 
     public function __construct()
     {
@@ -25,6 +26,11 @@ class ChartApi extends Api
             $this->chartType = $this->apiRequest->getVar['chartType'];
             $this->dataFormat = $this->apiRequest->getVar['dataFormat'];
             $this->token = $this->apiRequest->getVar['token'];
+            if (isset($this->apiRequest->getVar['nullCategory'])) {
+                $this->nullCategory = $this->apiRequest->getVar['nullCategory'];
+            } else {
+                $this->nullCategory = "null";
+            }
             $validChartTypes = array(
                 'line',
                 'area',
@@ -91,7 +97,12 @@ SELECT * FROM $fullName
 EOD;
             $this->dbCon->query($sqlStatement);
             $result = $this->dbCon->result;
-            $this->formatResult();
+            if ($result == FALSE) {
+                $this->apiResponse->setBody('{"error": "Invalid parameters"}');
+                $this->apiResponse->setHttpCode(400);
+            } else {
+                $this->formatResult();
+            }
         }
     }
     private function formatResult()
@@ -100,35 +111,66 @@ EOD;
         //pull column names and use for labels?
         if ($this->dataFormat == 'singleValues') {
             $chartType = '"chart": {"type": "' . $this->chartType . '"},';
-            $data = '"series": [{"data": [';
-            $categories = '"xaxis": {"categories": [';
             $rowCount = 0;
+            $categoriesArray = array();
+            $seriesArray = array();
             while ($row = pg_fetch_assoc($this->dbCon->result)) {
                 $columnCount = 0;
+                $rowArray = array();
                 foreach ($row as $key => $value) {
+                    if ($value == NULL) {
+                        $value = 'null';
+                    }
                     if ($columnCount == 0) {
-                        if ($rowCount > 0) {
-                            $categories .= ',';
+                        array_push($categoriesArray, $value);
+                    } else if ($columnCount > 0) {
+                        if (count($seriesArray[$columnCount - 1]) == 0) {
+                            $seriesArray[$columnCount - 1] = array();
                         }
-                        if (is_null($value) || $value == '') {
-                            $value = 'null';
-                        }
-                        $categories .= '"' . $value . '"';
-                    } else if ($columnCount == 1) {
-                        if ($rowCount > 0) {
-                            $data .= ',';
-                        }
-                        if (is_null($value) || $value == '') {
-                            $value = 'null';
-                        }
-                        $data .= $value;
+                        array_push($rowArray, $value);
                     }
                     $columnCount += 1;
                 }
+                $rowArrayCount = 0;
+                foreach ($rowArray as $r) {
+                    array_push($seriesArray[$rowArrayCount], $rowArray[$rowArrayCount]);
+                    $rowArrayCount += 1;
+                }
                 $rowCount += 1;
             }
+            $categories = '"xaxis": {"categories": [';
+            $categoriesCount = 0;
+            foreach ($categoriesArray as $category) {
+                if ($categoriesCount > 0) {
+                    $categories .= ",";
+                }
+                if ($category == "null") {
+                    $category = $this->nullCategory;
+                }
+                $categories .= '"' . $category . '"';
+                $categoriesCount += 1;
+            }
             $categories .= "]}";
-            $data .= "]}]";
+            $data = '"series": [';
+            $seriesCount = 0;
+            foreach ($seriesArray as $seriesValue) {
+                $seriesString = '{"data": [';
+                if ($seriesCount > 0) {
+                    $data .= ",";
+                }
+                $seriesValueCount = 0;
+                foreach ($seriesValue as $s) {
+                    if ($seriesValueCount > 0) {
+                        $seriesString .= ",";
+                    }
+                    $seriesString .= $s;
+                    $seriesValueCount += 1;
+                }
+                $seriesString .= "]}";
+                $data .= $seriesString;
+                $seriesCount += 1;
+            }
+            $data .= "]";
             $response = '{' . $chartType . $data . "," . $categories . '}';
         } else if ($this->dataFormat == 'pairedValues') {
         } else if ($this->dataFormat == 'xyValues') {

@@ -23,6 +23,7 @@ class MapOptionsApi extends Api
         $mapNameCriteria = "";
         $parameterCount = 0;
         $criteriaArray = array();
+        $error = FALSE;
         if (isset($this->apiRequest->getVar['referenceId'])) {
             $parameterCount += 1;
             $referenceId = $this->apiRequest->getVar['referenceId'];
@@ -49,7 +50,11 @@ EOD;
             $this->user->setToken($token);
             $this->user->getUserFromToken();
             $this->user->checkToken();
-            $this->user->validate();
+            //$this->user->checkPassword();
+        } else {
+            $this->apiResponse->setHttpCode(401);
+            $this->apiResponse->setBody('{"error":"You do not have access to the requested data"}');
+            $error = TRUE;
         }
         if ($error == FALSE) {
             $this->getMapOptions($criteriaArray);

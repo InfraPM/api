@@ -24,7 +24,7 @@ class Api
         $baseURL = $_ENV['baseURL'];
         $TRPURL = $_ENV['TRPAppURL'];
         $originUrl = $baseURL . "regionalroads.com";
-        $allowedOrigins = [$TRPURL, $originUrl];
+        $allowedOrigins = array_merge($TRPURL, [$originUrl]);
         $headers = array(
             'Access-Control-Allow-Credentials' => 'true',
             'Access-Control-Allow-Methods' => 'GET, PUT, POST, DELETE, OPTIONS',

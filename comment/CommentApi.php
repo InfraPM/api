@@ -1,3 +1,4 @@
+
 <?php
 require __DIR__ . '/../Api.php';
 
@@ -172,12 +173,12 @@ EOD;
             if (is_null($i['replyId']) == FALSE) {
                 $curReplyId = $i['replyId'];
                 $sql2 =  <<<EOD
-INSERT INTO "$curSchemaName"."CommentIndex" ("CommentId", "DatasetId", "FeatureId", "ReplyId") VALUES ($1, (SELECT id FROM gm.spatialdata WHERE name=$2 AND schemaname=$3 AND tablename=$4), $5, $6)
+INSERT INTO "$curSchemaName"."CommentIndex" ("CommentId", "resource_id", "FeatureId", "ReplyId") VALUES ($1, (SELECT spatialdata.resource_id as id FROM gm.spatialdata JOIN gm.resource ON resource.id = spatialdata.resource_id WHERE resource.name=$2 AND spatialdata.schemaname=$3 AND spatialdata.tablename=$4), $5, $6)
 EOD;
                 $parameters2 = array($insertedCommentId, $curDataset, $curSchemaName, $curTableName, $curFeatureId, $curReplyId);
             } else {
                 $sql2 = <<<EOD
-INSERT INTO "$curSchemaName"."CommentIndex" ("CommentId", "DatasetId", "FeatureId") VALUES ($1, (SELECT id FROM gm.spatialdata WHERE name=$2 AND schemaname=$3 AND tablename=$4), $5)
+INSERT INTO "$curSchemaName"."CommentIndex" ("CommentId", "resource_id", "FeatureId") VALUES ($1, (SELECT spatialdata.resource_id as id FROM gm.spatialdata JOIN gm.resource ON resource.id = spatialdata.resource_id WHERE resource.name=$2 AND spatialdata.schemaname=$3 AND spatialdata.tablename=$4), $5)
 EOD;
                 $parameters2 = array($insertedCommentId, $curDataset, $curSchemaName, $curTableName, $curFeatureId);
             }
@@ -257,7 +258,7 @@ EOD;
             $archiveIndexParameters = array($curCommentId);
             //create copy of this row with archiveId populated
             $insertArchiveIndexSql = <<<EOD
-INSERT INTO $schemaName."CommentIndex" ("CommentId", "DatasetId", "FeatureId", "ReplyId", "ArchiveId") VALUES ($1, $2, $3, $4, $5)
+INSERT INTO $schemaName."CommentIndex" ("CommentId", "resource_id", "FeatureId", "ReplyId", "ArchiveId") VALUES ($1, $2, $3, $4, $5)
 EOD;
             //finally update the original comment record
             $updateCommentSql = <<<EOD
@@ -274,7 +275,7 @@ EOD;
                 $this->dbCon->query($updateArchiveSql, $updateArchiveParameters);
                 $this->dbCon->query($archiveIndexSql, $archiveIndexParameters);
                 while ($row = pg_fetch_assoc($this->dbCon->result)) {
-                    $indexDatasetId = $row['DatasetId'];
+                    $indexDatasetId = $row['resource_id'];
                     $indexFeatureId = $row['FeatureId'];
                     $indexReplyId = $row['ReplyId'];
                     $indexCommentId = $row['CommentId'];
@@ -310,8 +311,13 @@ EOD;
     private function getDatasetFromComment($commentId): string
     {
         $sql = <<<EOD
-SELECT spatialdata.name AS name FROM gm.spatialdata INNER JOIN $this->commentSchema."CommentIndex" ON spatialdata.id = "CommentIndex"."DatasetId" WHERE "CommentIndex"."CommentId" = $1
+        SELECT resource.name AS name FROM gm.resource
+INNER JOIN $this->commentSchema."CommentIndex" ON resource.id = "CommentIndex"."resource_id" 
+WHERE "CommentIndex"."CommentId" = $1
 EOD;
+        /*$sql = <<<EOD
+SELECT resource.name AS name FROM gm.spatialdata INNER JOIN $this->commentSchema."CommentIndex" ON spatialdata.id = "CommentIndex"."resource_id" INNER JOIN gm.resource ON resource.id = spatialdata.resource_id WHERE "CommentIndex"."CommentId" = $1
+EOD;*/
         $parameters = array($commentId);
         $this->dbCon->query($sql, $parameters);
         $result = $this->dbCon->result;

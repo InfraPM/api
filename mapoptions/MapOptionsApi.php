@@ -10,6 +10,7 @@ class MapOptionsApi extends Api
         parent::__construct();
         $this->schemaName = "gm";
         $this->tableName = "mapreference";
+        $this->resourceTableName = "resource";
         $this->apiRequest->setType("POST");
         $this->apiResponse->setFormat("text/html");
     }
@@ -28,14 +29,14 @@ class MapOptionsApi extends Api
             $parameterCount += 1;
             $referenceId = $this->apiRequest->getVar['referenceId'];
             $referenceIdCriteria = <<<EOD
-"id" = $parameterCount
+"resource.id" = $$parameterCount
 EOD;
             $criteriaArray[$referenceId] = $referenceIdCriteria;
         } else if (isset($this->apiRequest->getVar['mapName'])) {
             $parameterCount += 1;
             $mapName = $this->apiRequest->getVar['mapName'];
             $mapNameCriteria = <<<EOD
-"name"= $$parameterCount
+"resource"."name"= $$parameterCount
 EOD;
             $criteriaArray[$mapName] = $mapNameCriteria;
         } else {
@@ -66,8 +67,16 @@ EOD;
     private function getMapOptions(array $criteriaArray): void
     {
         $sql = <<<EOD
+select "$this->tableName".options,
+"$this->tableName".displayname
+from "$this->schemaName"."$this->tableName"
+join "$this->schemaName"."$this->resourceTableName" 
+on "$this->tableName".resource_id = "$this->resourceTableName".id
+EOD;
+        /*$sql = <<<EOD
 SELECT "options", "displayname" FROM "$this->schemaName"."$this->tableName"
 EOD;
+*/
         $criteriaCount = 0;
         $parameters = array();
         foreach ($criteriaArray as $key => $value) {

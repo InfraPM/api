@@ -5,6 +5,7 @@ class PermissionsApi extends Api
     private $mode;
 
     public function __construct()
+
     {
         parent::__construct();
         $this->apiRequest->setType("POST");

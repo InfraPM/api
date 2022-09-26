@@ -22,14 +22,14 @@ class Api
         $this->setDbCon($dbCon);
         $this->setUser($user);
         $baseURL = $_ENV['baseURL'];
-        $TRPURL = $_ENV['TRPAppURL'];
+        $originWhiteList = $_ENV['originWhiteList'];
         $originUrl = $baseURL . "regionalroads.com";
-        $allowedOrigins = array_merge($TRPURL, [$originUrl]);
+        $allowedOrigins = array_merge($originWhiteList, [$originUrl]);
         $headers = array(
             'Access-Control-Allow-Credentials' => 'true',
-            'Access-Control-Allow-Methods' => 'GET, PUT, POST, DELETE, OPTIONS',
+            'Access-Control-Allow-Methods' => 'GET, PUT, POST, DELETE, OPTIONS, HEAD',
             'Access-Control-Max-Age' => '1000',
-            'Access-Control-Allow-Headers' => 'Origin, Content-Type, X-Auth-Token , Authorization'
+            'Access-Control-Allow-Headers' => 'Origin, Accept, Content-Type, X-Auth-Token, Authorization, Access-Control-Request-Method, Access-Control-Request-Headers, X-Requested-With'
         );
         if (in_array($_SERVER["HTTP_ORIGIN"], $allowedOrigins)) {
             $headers['Access-Control-Allow-Origin'] = $_SERVER["HTTP_ORIGIN"];
@@ -73,12 +73,16 @@ class Api
      */
     public function sendResponse(): void
     {
-        http_response_code($this->apiResponse->httpCode);
         foreach ($this->apiResponse->headers as $key => $value) {
             header($key . ": " . $value);
         }
         header('Content-type: ' . $this->apiResponse->format);
-        echo $this->apiResponse->body;
+        if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+            http_response_code(200);
+        } else {
+            http_response_code($this->apiResponse->httpCode);
+            echo $this->apiResponse->body;
+        }
         die();
     }
     /**

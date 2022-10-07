@@ -201,6 +201,8 @@ class SimpleWfsApi extends Api
             header('Content-Disposition: attachment; filename=' . $this->typeNames . '.json');
         } else if ($this->outputFormat == "application/vnd.google-earth.kml xml" && $this->download == TRUE) {
             header('Content-Disposition: attachment; filename=' . $this->typeNames . '.kml');
+        } else if ($this->outputFormat == "shape-zip" && $this->download == TRUE) {
+            header('Content-Disposition: attachment; filename=' . $this->typeNames . '.zip');
         }
         $this->apiResponse->setHttpCode(200);
         $this->apiResponse->setBody($response);

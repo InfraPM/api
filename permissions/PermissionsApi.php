@@ -30,13 +30,18 @@ class PermissionsApi extends Api
             } else {
                 $this->mode = "data";
             }
-            $this->getPermissions($postData['token']);
+            
+            if (isset($postData['agencyid'])){
+                $this->getPermissions($postData['token'], $postData['agencyid']);
+            }else{
+                $this->getPermissions($postData['token'], null);
+            }
         }
     }
     /**
      * Retrieve all permissions from the database for the given user
      */
-    public function getPermissions(string $token): void
+    public function getPermissions(string $token, string $agencyid = null): void
     {
         //$token = $postData['token'];
         $this->user->setToken($token);
@@ -48,7 +53,7 @@ class PermissionsApi extends Api
             return;
         }
         if( ($this->mode == 'all')) {
-            $returnString = json_encode($this->user->getPermList());
+            $returnString = json_encode($this->user->getPermList(FALSE, null, $agencyid));
         } else {
             if ($this->mode == 'app') {
                 $dataList = $this->user->getAppList(FALSE, "read");

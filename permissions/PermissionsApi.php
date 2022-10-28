@@ -53,7 +53,9 @@ class PermissionsApi extends Api
             return;
         }
         if( ($this->mode == 'all')) {
-            $returnString = json_encode($this->user->getPermList(FALSE, null, $agencyid));
+            $permissions = $this->user->getPermList(FALSE, null, $agencyid);
+            $userInfo = array('user_id' => $this->user->userId, 'username' => $this->user->userName);
+            $returnString = json_encode( array('user'=>$userInfo, 'perms'=>$permissions) );
         } else {
             if ($this->mode == 'app') {
                 $dataList = $this->user->getAppList(FALSE, "read");

@@ -31,7 +31,7 @@ class Api
             'Access-Control-Max-Age' => '1000',
             'Access-Control-Allow-Headers' => 'Origin, Accept, Content-Type, X-Auth-Token, Authorization, Access-Control-Request-Method, Access-Control-Request-Headers, X-Requested-With'
         );
-        if (in_array($_SERVER["HTTP_ORIGIN"], $allowedOrigins)) {
+        if (isset($_SERVER["HTTP_ORIGIN"]) && in_array($_SERVER["HTTP_ORIGIN"], $allowedOrigins)) {
             $headers['Access-Control-Allow-Origin'] = $_SERVER["HTTP_ORIGIN"];
         }
 

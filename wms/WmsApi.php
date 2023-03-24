@@ -9,6 +9,7 @@ class WmsApi extends Api
     private $public;
     private $workspace;
     private $parameters;
+    private $cqlfilter;
     private $dataList;
 
     public function __construct()
@@ -166,6 +167,8 @@ class WmsApi extends Api
                         $commaCountQuery += 1;
                     }
                     $this->parameters .= $valueEditQuery;
+                }elseif (strtolower($key) == 'cql_filter'){
+                    $this->cqlfilter = $value;            
                 } else {
                     $this->parameters .= $key . "=" . urlencode($value);
                 }
@@ -212,21 +215,27 @@ class WmsApi extends Api
                 $this->user->dataAccess($this->dataList, $finalRequestedDataArray, $_ENV['geoserverWorkspacePrefix'], "wms")
                 and $this->user->tokenExpired == FALSE
             ) {
-                $requestURL = $requestURL . $this->parameters;
+
+                if (!$this->updateCqlFilter($this->dataList, $requestedDataArray)){
+                    return;
+                }                
+                if ($this->cqlfilter){
+                    $requestURL = $requestURL . $this->parameters . "&cql_filter=" . urlencode($this->cqlfilter);
+                }else{
+                    $requestURL = $requestURL . $this->parameters;
+                }
+
                 $response = file_get_contents($requestURL, false, stream_context_create($arrContextOptions));
-                //var_dump($response);
                 $finalHeader = array_merge($http_response_header, $this->apiResponse->headers);
-                /*foreach ($http_response_header as $key => $value) {
-                    header($value);
-                }*/
                 $this->apiResponse->setHeaders($finalHeader);
                 $this->apiResponse->setHttpCode(200);
                 if (strtolower($this->request) == "getfeatureinfo") {
                     $this->apiResponse->setFormat("text/html");
                 } else {
-                    $this->apiResponse->setFormat($this->format);
+                   $this->apiResponse->setFormat($this->format);
                 }
                 $this->apiResponse->setBody($response);
+                
             } else {
                 $this->apiResponse->setHttpCode(401);
                 $this->apiResponse->setFormat("application/json");
@@ -234,6 +243,71 @@ class WmsApi extends Api
             }
         }
     }
+
+
+    function updateCqlFilter($dataList, $requestDataArray){
+
+        //determine how many of the requested layers require agency filters
+        $array = json_decode($dataList, TRUE);
+        $agencycnt = 0;
+        foreach ($requestDataArray as $data) {
+            foreach ($array as $json) {
+                if ($json['name'] == $data) {
+                    if ($json['is_agency_secure'] == "t"){
+                        $agencycnt += 1;
+                    }
+                }
+            }
+        }
+
+        if ($agencycnt == 0) return true;
+        if ($agencycnt != count($requestDataArray)){
+            //some layers require agency filter others don't
+            //we don't support this
+            $this->apiResponse->setHttpCode(401);
+            $this->apiResponse->setFormat("application/json");
+            $this->apiResponse->setBody('{"error": "Cannot combine layers that require agency validation with those that do not."}');
+            return false;
+        } 
+        
+        //add agency id to cql filter
+        $ids=null;
+        $hasall = false;
+        foreach ($requestDataArray as $data) {
+            $agencies = $this->user->getAgencies($data, "read"); 
+            if ($hasall == true && $agencies != null){
+                $this->apiResponse->setHttpCode(401);
+                $this->apiResponse->setFormat("application/json");
+                $this->apiResponse->setBody('{"error": "Cannot combine layers that have difference agency access."}');
+                return;
+            }
+            if ($agencies == null){
+                $hasall = true;
+            }
+            
+            if ($ids == null){
+                $ids = $agencies;
+            }else if ($ids !== $agencies){
+                $this->apiResponse->setHttpCode(401);
+                $this->apiResponse->setFormat("application/json");
+                $this->apiResponse->setBody('{"error": "Cannot combine layers that have difference agency access."}');
+                return;
+            }
+        }
+        
+        if ($ids == null){
+            //has access to all data
+            return true;
+        } 
+            
+        if ($this->cqlfilter == ""){
+            $this->cqlfilter = "agency_id in (" . implode(",", $ids) . ")";
+        }else{
+            $this->cqlfilter = "(" . $this->cqlfilter . ") and agency_id in (" . implode(",", $ids) . ")";
+        }
+        return true;
+    }
+
     /*function truncateRequestedData($requestedData)
         {
             $truncatedString = substr($requestedData, -4);

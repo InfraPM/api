@@ -22,7 +22,8 @@ class Api
         $this->setDbCon($dbCon);
         $this->setUser($user);
         $baseURL = $_ENV['baseURL'];
-        $originWhiteList = $_ENV['originWhiteList'];
+        $originWhiteListStr = $_ENV['originWhiteList'];
+        $originWhiteList = explode('|',$originWhiteListStr);
         $originUrl = $baseURL . "regionalroads.com";
         $allowedOrigins = array_merge($originWhiteList, [$originUrl]);
         $headers = array(

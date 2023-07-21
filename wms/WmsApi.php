@@ -84,11 +84,11 @@ class WmsApi extends Api
             $this->user->setToken($this->token);
             $this->user->getUserFromToken();
             //$this->user->checkToken();
-            $this->dataList = $this->user->getDataList();
+            //$this->dataList = $this->user->getDataList();
         } else {
             $this->user->setToken($this->token);
             $this->user->getUserFromToken();
-            $this->dataList = $this->user->getDataList($this->public);
+            //$this->dataList = $this->user->getDataList($this->public);
         }
 
         $commaPos = strpos($this->layers, ",");
@@ -112,7 +112,8 @@ class WmsApi extends Api
                 $this->workspace = $_ENV['geoserverWorkspacePrefix'] . substr($data, 0, $colonPos);
                 array_push($finalRequestedDataArray, $data);
             } else {
-                $this->workspace = $this->user->getWorkspace($this->dataList, substr($data, $colonPos), $_ENV['geoserverWorkspacePrefix']);
+                //$this->workspace = $this->user->getWorkspace($this->dataList, substr($data, $colonPos), $_ENV['geoserverWorkspacePrefix']);
+                $this->workspace = $this->user->getWorkspace($data);
                 $formattedString = $this->workspace . ":" . substr($data, $colonPos);
                 array_push($finalRequestedDataArray, $formattedString);
             }
@@ -125,7 +126,8 @@ class WmsApi extends Api
                     $workspaceQuery = $_ENV['geoserverWorkspacePrefix'] . substr($queryData, 0, $colonPosQuery);
                     array_push($finalRequestedQueryDataArray, $queryData);
                 } else {
-                    $workspaceQuery = $this->user->getWorkspace($this->dataList, substr($queryData, $colonPosQuery), $_ENV['geoserverWorkspacePrefix']);
+                    //$workspaceQuery = $this->user->getWorkspace($this->dataList, substr($queryData, $colonPosQuery), $_ENV['geoserverWorkspacePrefix']);
+                    $workspaceQuery = $this->user->getWorkspace($queryData);
                     $formattedQueryString = $workspaceQuery . ":" . substr($queryData, $colonPosQuery);
                     array_push($finalRequestedQueryDataArray, $formattedQueryString);
                 }
@@ -194,7 +196,8 @@ class WmsApi extends Api
             $toDelete = array();
             foreach ($xml->Capability->Layer->Layer as $key1 => $value1) {
                 $dataArray = array($value1->Name);
-                if ($this->user->dataAccess($this->dataList, $dataArray, $_ENV['geoserverWorkspacePrefix'], "wms") == FALSE) {
+                //if ($this->user->dataAccess($this->dataList, $dataArray, $_ENV['geoserverWorkspacePrefix'], "wms") == FALSE) {
+                if ($this->user->hasPerms("read", $dataArray) == false) {
                     array_push($toDelete, $xml->Capability->Layer->Layer[$elementCount]);
                 }
                 $elementCount += 1;
@@ -208,10 +211,11 @@ class WmsApi extends Api
             $this->apiResponse->setBody($xml->asXML());
         } else {
             $this->user->checkToken();
-            if (
-                $this->user->dataAccess($this->dataList, $finalRequestedDataArray, $_ENV['geoserverWorkspacePrefix'], "wms")
-                and $this->user->tokenExpired == FALSE
-            ) {
+            //if (
+            //    $this->user->dataAccess($this->dataList, $finalRequestedDataArray, $_ENV['geoserverWorkspacePrefix'], "wms")
+            //    and $this->user->tokenExpired == FALSE
+            //) {
+            if ($this->user->hasPerms("read", $finalRequestedDataArray) and $this->user->tokenExpired == FALSE) {
                 $requestURL = $requestURL . $this->parameters;
                 $response = file_get_contents($requestURL, false, stream_context_create($arrContextOptions));
                 //var_dump($response);

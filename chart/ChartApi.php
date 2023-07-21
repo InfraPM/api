@@ -138,7 +138,13 @@ EOD;
                 }
                 $rowCount += 1;
             }
-            $categories = '"xaxis": {"categories": [';
+            if ($this->chartType == "bar") {
+                $categories = '"xaxis": {"categories": [';
+                $categoriesClosure = ']}';
+            } else if ($this->chartType == "pie" or $this->chartType == "donut") {
+                $categories = '"labels": [';
+                $categoriesClosure = ']';
+            }
             $categoriesCount = 0;
             foreach ($categoriesArray as $category) {
                 if ($categoriesCount > 0) {
@@ -150,11 +156,14 @@ EOD;
                 $categories .= '"' . $category . '"';
                 $categoriesCount += 1;
             }
-            $categories .= "]}";
+            //$categories .= "]}";
+            $categories .= $categoriesClosure;
             $data = '"series": [';
             $seriesCount = 0;
             foreach ($seriesArray as $seriesValue) {
-                $seriesString = '{"data": [';
+                if ($this->chartType == "bar") {
+                    $seriesString = '{"data": [';
+                }
                 if ($seriesCount > 0) {
                     $data .= ",";
                 }
@@ -166,7 +175,9 @@ EOD;
                     $seriesString .= $s;
                     $seriesValueCount += 1;
                 }
-                $seriesString .= "]}";
+                if ($this->chartType == "bar") {
+                    $seriesString .= "]}";
+                }
                 $data .= $seriesString;
                 $seriesCount += 1;
             }

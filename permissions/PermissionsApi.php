@@ -24,7 +24,7 @@ class PermissionsApi extends Api
         } else {
             if (isset($this->apiRequest->getVar['mode'])) {
                 $this->mode = $this->apiRequest->getVar['mode'];
-                if (!in_array($this->mode, ['app','data','all'])) {
+                if (!in_array($this->mode, ['app', 'data', 'all'])) {
                     $this->mode = 'data';
                 }
             } else {
@@ -47,7 +47,7 @@ class PermissionsApi extends Api
             $this->apiResponse->setBody('{"error":"Unathorized"}');
             return;
         }
-        if( ($this->mode == 'all')) {
+        if (($this->mode == 'all')) {
             $returnString = json_encode($this->user->getPermList());
         } else {
             if ($this->mode == 'app') {

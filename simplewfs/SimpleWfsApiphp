@@ -1,0 +1,23 @@
+<?php
+require '../Api.php';
+class SimpleWfsApi extends Api
+{
+    public function __construct()
+    {
+        parent::__construct();
+        //$this->apiResponse->setFormat("application/json");
+    }
+    /**
+     * Perform API logic based on the API Request
+     */
+    public function readRequest(): void
+    {
+        $postData = json_decode($this->apiRequest->postVar, TRUE);
+    }
+    /**
+     * Generate API Response
+     */
+    public function generateResponse(): void
+    {
+    }
+}

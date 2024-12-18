@@ -4,6 +4,7 @@ class MapOptionsApi extends Api
 {
     private $schemaName;
     private $tableName;
+    private $resourceTableName;
 
     public function __construct()
     {

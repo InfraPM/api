@@ -11,6 +11,7 @@ class WmsApi extends Api
     private $parameters;
     private $cqlfilter;
     private $dataList;
+    private $queryLayers;
 
     public function __construct()
     {
@@ -93,7 +94,7 @@ class WmsApi extends Api
         }
 
         $commaPos = strpos($this->layers, ",");
-        $commaPosQuery = strpos($this->queryLayers, ",");
+        $commaPosQuery = $this->queryLayers != null ? strpos($this->queryLayers, ",") : FALSE;
 
         if ($commaPos != FALSE) {
             $requestedDataArray = explode(",", $this->layers);

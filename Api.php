@@ -5,10 +5,10 @@ require __DIR__ . '/../support/User.php';
 
 class Api
 {
-    private $apiResponse;
-    private $apiRequest;
-    private $dbCon;
-    private $user;
+    public $apiResponse;
+    public $apiRequest;
+    protected $dbCon;
+    protected $user;
 
     public function __construct()
     {
@@ -23,7 +23,7 @@ class Api
         $this->setUser($user);
         $baseURL = $_ENV['baseURL'];
         $originWhiteListStr = $_ENV['originWhiteList'];
-        $originWhiteList = explode('|',$originWhiteListStr);
+        $originWhiteList = explode('|', $originWhiteListStr);
         $originUrl = $baseURL . "regionalroads.com";
         $allowedOrigins = array_merge($originWhiteList, [$originUrl]);
         $headers = array(
@@ -38,19 +38,7 @@ class Api
 
         $this->apiResponse->setHeaders($headers);
     }
-    /**
-     * Return the requested property of the class
-     * 
-     * @param string $property The property to return
-     */
-    public function __get(string $property)
-    {
-        if (isset($this->$property)) {
-            return $this->$property;
-        } else {
-            throw new Exception('Property ' . get_class($this) . '::' . $property . ' does not exist.');
-        }
-    }
+
     /**
      * Set the ApiRequest of the ApiCall
      * 
@@ -77,7 +65,9 @@ class Api
         foreach ($this->apiResponse->headers as $key => $value) {
             header($key . ": " . $value);
         }
-        header('Content-type: ' . $this->apiResponse->format);
+        if ($this->apiResponse->format) {
+            header('Content-type: ' . $this->apiResponse->format);
+        }
         if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
             http_response_code(200);
         } else {

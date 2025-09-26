@@ -6,7 +6,7 @@ if ((file_get_contents("php://input")) !== FALSE) {
 } else {
     $rawPost = '';
 }
-$simpleWfsApi->apiRequest->setGetVar($_GET);
+$simpleWfsApi->apiRequest->setGetVar(array_change_key_case($_GET, CASE_LOWER));
 $simpleWfsApi->apiRequest->setRawPostVar($rawPost);
 $simpleWfsApi->readRequest();
 $simpleWfsApi->sendResponse();

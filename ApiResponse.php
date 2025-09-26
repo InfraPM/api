@@ -6,9 +6,7 @@ class ApiResponse
     private $headers;
     private $httpCode;
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
     /**
      * Return the requested property
      * 
@@ -19,7 +17,7 @@ class ApiResponse
         if (isset($this->$property)) {
             return $this->$property;
         } else {
-            throw new Exception('Property ' . get_class($this) . '::' . $property . ' does not exist.');
+            return null;
         }
     }
     /**

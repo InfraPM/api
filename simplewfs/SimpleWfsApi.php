@@ -1,17 +1,13 @@
 <?php
-require __DIR__ . '/../Api.php';
-class SimpleWfsApi extends Api
+
+require __DIR__ . '/../ows/OwsApi.php';
+
+class SimpleWfsApi extends OwsApi
 {
-    private $service;
-    private $request;
     private $typeNames;
-    private $featureId;
     private $outputFormat;
-    private $spatialData;
-    private $token;
     private $download;
     private $event;
-    private $dataList;
     private $workspace;
 
     public function __construct()
@@ -23,9 +19,11 @@ class SimpleWfsApi extends Api
      */
     public function readRequest(): void
     {
+        parent::readRequest();
         if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
             return;
         }
+
         $error = FALSE;
         $this->outputFormat = "application/xml";
         if ($this->apiRequest->postVar != '') {
@@ -35,14 +33,8 @@ class SimpleWfsApi extends Api
             } else if (isset($postData[0])) {
                 $this->token = $postData[0];
             } else {
-                $this->apiResponse->setHttpCode(400);
-                $this->apiResponse->setFormat($this->outputFormat);
-                $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?>
-       <WFSerror>
-       <error>You do not have access to the specified data</error>
-       </WFSerror>');
+                $this->error();
                 $error = TRUE;
-                $this->event = "WFS Request Error";
             }
         }
         if ($this->token != NULL) {
@@ -54,12 +46,12 @@ class SimpleWfsApi extends Api
             if (isset($this->apiRequest->getVar['outputFormat'])) {
                 $this->outputFormat = $this->apiRequest->getVar['outputFormat'];
             }
-            if (isset($this->apiRequest->getVar['token'])) {
-                $this->token = $this->apiRequest->getVar['token'];
-                $this->user->setToken($this->token);
-                $this->user->getUserFromToken();
-                $this->user->checkToken();
-            } //else {
+            // if (isset($this->apiRequest->getVar['token'])) {
+            //     $this->token = $this->apiRequest->getVar['token'];
+            //     $this->user->setToken($this->token);
+            //     $this->user->getUserFromToken();
+            //     $this->user->checkToken();
+            // } //else {
             //$this->token = '';
             //}
             if (isset($this->apiRequest->getVar['download'])) {
@@ -76,13 +68,6 @@ class SimpleWfsApi extends Api
             } else if (isset($this->apiRequest->getVar['typeName'])) {
                 $this->typeNames = $this->apiRequest->getVar['typeName'];
             }
-            if (isset($this->apiRequest->getVar['request'])) {
-                $this->request = $this->apiRequest->getVar['request'];
-            } else if (isset($this->apiRequest->getVar['REQUEST'])) {
-                $this->request = $this->apiRequest->getVar['REQUEST'];
-            } else {
-                $this->request = NULL;
-            }
             if ($this->token == NULL) {
                 $this->token = '';
             }
@@ -90,14 +75,8 @@ class SimpleWfsApi extends Api
             $this->user->getUserFromToken();
             $this->user->checkToken();
             if ($this->user->tokenExpired) {
-                $this->apiResponse->setHttpCode(400);
-                $this->apiResponse->setFormat($this->outputFormat);
-                $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?>
-       <WFSerror>
-       <error>You do not have access to the specified data</error>
-       </WFSerror>');
+                $this->error(401, "Token Expired");
                 $error = TRUE;
-                $this->event = "WFS Request Error";
             }
             if ($this->request == 'DescribeFeatureType') {
                 $this->dataList = $this->user->getDataList(FALSE, "read");
@@ -122,23 +101,40 @@ class SimpleWfsApi extends Api
             }
             $errorRequestBody = $this->apiRequest->postVar;
         }
+
+        if ($this->request && strtolower($this->request) == 'getcapabilities') {
+            $this->dataList = $this->user->getDataList($this->public, "read");
+            $wfsURL = $_ENV['baseGeoserverURL'] . "/" . $_ENV['geoserverWorkspacePrefix'] . "dev/wfs?";
+            $user = $_ENV['wfsUser'];
+            $password = $_ENV['wfsPassword'];
+            $encoded = base64_encode($user . ":" . $password);
+            $arrContextOptions = array(
+                "ssl" => array(
+                    "verify_peer" => false,
+                    "verify_peer_name" => false,
+                ),
+                'http' => array(
+                    'method'  => 'GET',
+                    'header'  => array(
+                        'Accept: application/xml',
+                        'Authorization: Basic ' . $encoded
+                    )
+                )
+            );
+            $this->handleGetCapabilities($wfsURL, $arrContextOptions);
+            return;
+        }
+
         $this->workspace = $this->user->getWorkspace($this->dataList, $this->typeNames, $_ENV['geoserverWorkspacePrefix']);
         if ($this->user->dataAccess($this->dataList, array($this->typeNames), "", "wfs") == FALSE) {
-            $this->apiResponse->setHttpCode(401);
-            $this->apiResponse->setFormat($this->outputFormat);
-            $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?><WFSerror><error>You do not have access to the specified data</error></WFSerror>');
-            $this->event = "WFS Request Error";
+            $this->error();
             $error = TRUE;
         }
-        
+
         if ($error == FALSE) {
             $this->apiResponse->setFormat($this->outputFormat);
             $this->generateResponse();
         } else {
-            $this->apiResponse->setHttpCode(401);
-            $this->apiResponse->setFormat($this->outputFormat);
-            $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?><WFSerror><error>You do not have access to the specified data</error></WFSerror>');
-            $this->event = "WFS Request Error";
             $this->user->logEvent($this->event, $errorRequestBody);
         }
     }
@@ -154,19 +150,15 @@ class SimpleWfsApi extends Api
         if (count($this->apiRequest->getVar) == 0) {
             //update post body filter to validate
             //for agencies if required
-            $error = $this->addAgencyFiltersToPostBody($this->dataList, $this->typeNames);
-            if ($error){
-                $this->apiResponse->setHttpCode(401);
-                $this->apiResponse->setFormat($this->outputFormat);
-                $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?><WFSerror><error>' . $error . '</error></WFSerror>');
-                //$this->event = "WFS Request Error";
-                //$this->user->logEvent($this->event, $error);
+            $errorMsg = $this->addAgencyFiltersToPostBody($this->dataList, $this->typeNames);
+            if ($errorMsg) {
+                $this->error(403, $errorMsg);
+                //$this->user->logEvent($this->event, $errorMsg);
                 return;
             }
 
             $opts = array(
-                'http' =>
-                array(
+                'http' => array(
                     'method'  => 'POST',
                     'header'  => array(
                         'Content-Type: application/xml',
@@ -181,7 +173,7 @@ class SimpleWfsApi extends Api
 
             );
             //var_dump($wfsURL);
-            //var_dump($this->apiRequest->postVar);
+            var_dump($this->apiRequest->postVar);
             //die();
             $context  = stream_context_create($opts);
             $response = file_get_contents($wfsURL, false, $context);
@@ -206,8 +198,8 @@ class SimpleWfsApi extends Api
             //currently typeNames is a string and doesn't support multiple type names
             $querystr = $this->updateCqlFilter($querystr, $this->dataList, $this->typeNames);
             $context  = stream_context_create($opts);
-            $fullURL = $wfsURL . $querystr;    
-            
+            $fullURL = $wfsURL . $querystr;
+
             $response = file_get_contents($fullURL, false, $context);
             $requestBody = $_SERVER['REQUEST_URI'];
         }
@@ -232,6 +224,7 @@ class SimpleWfsApi extends Api
         $this->apiResponse->setBody($response);
         $this->user->logEvent($this->event, $requestBody);
     }
+
     /**
      * Return the dataset name from the current WFST POST request
      */
@@ -261,7 +254,7 @@ class SimpleWfsApi extends Api
         }
         $length = strlen($this->apiRequest->postVar) - $startIndex - (strlen($this->apiRequest->postVar) - $endIndex);
         $subString = substr($this->apiRequest->postVar, $startIndex, $length);
-        $xml = simplexml_load_string($subString, SimpleXMLElement::class, LIBXML_NOWARNING | LIBXML_NOERROR );
+        $xml = simplexml_load_string($subString, SimpleXMLElement::class, LIBXML_NOWARNING | LIBXML_NOERROR);
         $json = json_encode($xml);
         $array = json_decode($json, TRUE);
         if ($mode == "Insert") {
@@ -276,6 +269,36 @@ class SimpleWfsApi extends Api
         return $datasetName;
     }
 
+    private function handleGetCapabilities($requestURL, $arrContextOptions)
+    {
+        $requestURL = $requestURL . 'request=getcapabilities';
+        $response = file_get_contents($requestURL, FALSE, stream_context_create($arrContextOptions));
+        global $baseGeoserverURL, $baseAPIURL;
+
+        $finalResponse = str_replace($baseGeoserverURL . "/wfs", $baseAPIURL . "/simplewfs", $response);
+        if ($this->public == FALSE) {
+            $replaceString = "/ows?token=" . $this->token . "&amp;";
+            $finalResponse = str_replace("/ows?", $replaceString, $finalResponse);
+        }
+        $xml = simplexml_load_string($finalResponse);
+        $elementCount = 0;
+        $toDelete = array();
+        foreach ($xml->FeatureTypeList->FeatureType as $key1 => $value1) {
+            $dataArray = array($value1->Name);
+            if ($this->user->dataAccess($this->dataList, $dataArray, $_ENV['geoserverWorkspacePrefix'], "wfs") == FALSE) {
+                array_push($toDelete, $xml->FeatureTypeList->FeatureType[$elementCount]);
+            }
+            $elementCount += 1;
+        }
+        foreach ($toDelete as $del) {
+            $dom = dom_import_simplexml($del);
+            $dom->parentNode->removeChild($dom);
+        }
+        $this->apiResponse->setFormat("application/xml");
+        $this->apiResponse->setHttpCode(200);
+        $this->apiResponse->setBody($xml->asXML());
+    }
+
     /**
      * Function parses a WFS POST body for Insert, Update, Delete
      * actions and either validates the user has access to the 
@@ -283,7 +306,7 @@ class SimpleWfsApi extends Api
      * filter to Update and Delete actions so users can only
      * update agencies they have permission to access.
      */
-    private function addAgencyFiltersToPostBody(string $dataList, string $typeName) 
+    private function addAgencyFiltersToPostBody(string $dataList, string $typeName)
     {
         //agency ids
         $xml = new DOMDocument();
@@ -293,73 +316,73 @@ class SimpleWfsApi extends Api
         //filter V1.X requires PropertyName for filter
         //V2.X requires ValueReference
         $wfsversion = "1.0.0";
-        if ($xml->firstChild->hasAttribute("version")){
+        if ($xml->firstChild->hasAttribute("version")) {
             $wfsversion = $xml->firstChild->getAttribute("version");
         }
-        
-        if (count($xml->getElementsByTagName('Replace')) > 0){
+
+        if (count($xml->getElementsByTagName('Replace')) > 0) {
             return "Replace not supported.";
         }
 
         $actioncnt = count($xml->getElementsByTagName('Insert'))  +
-                    count($xml->getElementsByTagName('Delete')) +
-                    count($xml->getElementsByTagName('Update')) ;
-        if ($actioncnt > 1){
+            count($xml->getElementsByTagName('Delete')) +
+            count($xml->getElementsByTagName('Update'));
+        if ($actioncnt > 1) {
             return "Multiple actions are not supported in a single transaction";
         }
 
         //INSERT
         //first find agencies the user is allowed to insert into
-        $ids = $this->getAllowedAgencies($dataList, $typeName, 'insert');        
-        if ($ids != null){
+        $ids = $this->getAllowedAgencies($dataList, $typeName, 'insert');
+        if ($ids != null) {
             //validate insert statements
             //they require an agency and access to agency
-            foreach($xml->getElementsByTagName('Insert') as $insertRequest) {
-                
+            foreach ($xml->getElementsByTagName('Insert') as $insertRequest) {
+
                 $hasagency = false;
-                foreach($insertRequest->childNodes as $insert){
-                    foreach($insert->childNodes as $attribute){
-                        if ($attribute->nodeName == "agency_id"){
-                            if ($hasagency){
+                foreach ($insertRequest->childNodes as $insert) {
+                    foreach ($insert->childNodes as $attribute) {
+                        if ($attribute->nodeName == "agency_id") {
+                            if ($hasagency) {
                                 return "Mulitple agency_id's specified for feature.";
                             }
                             $hasagency = true;
-                            if (!in_array($attribute->textContent, $ids)){
+                            if (!in_array($attribute->textContent, $ids)) {
                                 return "You do not have permissions to add data to given agency.";
                             }
                         }
                     }
                 }
-                if (!$hasagency){               
+                if (!$hasagency) {
                     return "No agency_id specified for feature.";
                 }
             }
         }
-        
+
         //DELETE AND UPDATE
         //For these we add to the filter to include
         //the valid agency_ids. This will prevent
         //updating of features it shouldn't update
-        $ops = array("Delete", "Update");        
-        foreach($ops as $op){
+        $ops = array("Delete", "Update");
+        foreach ($ops as $op) {
             $items = $xml->getElementsByTagName($op);
             if (count($items) == 0) continue;
-            
+
             $perm = 'delete';
-            if ($op == "Update") $perm='modify';
+            if ($op == "Update") $perm = 'modify';
 
             $ids = $this->getAllowedAgencies($dataList, $typeName, $perm);
-            if ($ids != null){
-                foreach($items as $deleteRequest) {
+            if ($ids != null) {
+                foreach ($items as $deleteRequest) {
                     $filters = $deleteRequest->getElementsByTagName('Filter');
-                    if (count($filters) == 0){
+                    if (count($filters) == 0) {
                         //Just don't allow this for now and it's not necessary.
                         //If we do need to support this we need to create Filter 
                         //tag with proper namespace references
                         return "Update/Delete not supported without a filter";
-                    }else{
+                    } else {
                         //update filter
-                        foreach($filters as $filter){
+                        foreach ($filters as $filter) {
                             $currentFilter = $deleteRequest->removeChild($filter);
                             $and = $this->createElement($xml, $filter, "And");
                             while ($currentFilter->hasChildNodes()) {
@@ -369,15 +392,15 @@ class SimpleWfsApi extends Api
 
                             //ValueReference = v2.0
                             //PropertyName=v1
-                            if (count($ids) === 1){
+                            if (count($ids) === 1) {
                                 $and->appendChild($this->createAgencyFilter($xml, $filter, $ids[0], $wfsversion));
-                            }else{
-                                $or = $this->createElement($xml, $filter, "Or"); 
-                                foreach($ids as $id){
+                            } else {
+                                $or = $this->createElement($xml, $filter, "Or");
+                                foreach ($ids as $id) {
                                     $or->appendChild($this->createAgencyFilter($xml, $filter, $id, $wfsversion));
                                 }
                                 $and->appendChild($or);
-                            }                
+                            }
                             $currentFilter->appendChild($and);
                             $deleteRequest->appendChild($currentFilter);
                         }
@@ -397,14 +420,15 @@ class SimpleWfsApi extends Api
      * @param filter  filter node to grab namespace from
      * @param agencyid  agency_id to filter
      */
-    private function createAgencyFilter($xml, $filter, $agencyid, $wfsversion){
-        $pet = $this->createElement($xml, $filter, "PropertyIsEqualTo"); 
-        if ($wfsversion == "1.0.0" || $wfsversion == "1.1.0"){
+    private function createAgencyFilter($xml, $filter, $agencyid, $wfsversion)
+    {
+        $pet = $this->createElement($xml, $filter, "PropertyIsEqualTo");
+        if ($wfsversion == "1.0.0" || $wfsversion == "1.1.0") {
             $pn = $this->createElement($xml, $filter, "PropertyName");
-        }else{
+        } else {
             $pn = $this->createElement($xml, $filter, "ValueReference");
         }
-        
+
         $pn->nodeValue = "agency_id";
 
         $lit = $this->createElement($xml, $filter, "Literal");
@@ -414,20 +438,22 @@ class SimpleWfsApi extends Api
         $pet->appendChild($lit);
         return $pet;
     }
+
     /**
      * creates an xml element with same namespace as parent
      * @param xml xml document
      * @param parentNode parent node to get namespace from
      * @param element element name to create
      */
-    private function createElement($xml, $parentNode, $element){
-        if ($parentNode != null && $parentNode->prefix != null && $parentNode->prefix != ''){
+    private function createElement($xml, $parentNode, $element)
+    {
+        if ($parentNode != null && $parentNode->prefix != null && $parentNode->prefix != '') {
             return $xml->createElement("$parentNode->prefix:$element");
-        }else{
+        } else {
             return $xml->createElement($element);
         }
-        
     }
+
     /**
      * Remove the token parameter from the URL
      * 
@@ -461,7 +487,7 @@ class SimpleWfsApi extends Api
         //agency_id if it has neither add cql filter that includes agency ids
         $explode = explode("&", $queryString);
         $returnQueryString = array();
-        
+
         $hasfilter = false;
         foreach ($explode as $key => $value) {
             if (strpos(strtolower($value), "cql_filter=") !== FALSE) {
@@ -472,28 +498,28 @@ class SimpleWfsApi extends Api
                 $newpart = "(" . $part . ") and " . $afilter;
                 array_push($returnQueryString, "cql_filter=" . urlencode($newpart));
                 $hasfilter = true;
-            }elseif (strpos(strtolower($value), "featureid=") !== FALSE){
+            } elseif (strpos(strtolower($value), "featureid=") !== FALSE) {
                 $part = urldecode(substr($value, strlen("featureid=")));
-                 
+
                 //Convert to <Filter> 
                 $newpart = "<Filter><And>";
 
                 $fids = explode(",", $part);
-                if (count($fids) == 1){
+                if (count($fids) == 1) {
                     $newpart .= "<FeatureId fid=\"" . $fids[0] . "\"/>";
-                }else{
+                } else {
                     $newpart .= "<Or>";
-                    foreach($fids as $fid){
-                        $newpart .= "<FeatureId fid=\"" . $fid. "\"/>";
+                    foreach ($fids as $fid) {
+                        $newpart .= "<FeatureId fid=\"" . $fid . "\"/>";
                     }
                     $newpart .= "</Or>";
                 }
-                
-                if (count($ids) == 1){
+
+                if (count($ids) == 1) {
                     $newpart .= "<PropertyIsEqualTo><PropertyName>agency_id</PropertyName><Literal>" . $ids[0] . "</Literal></PropertyIsEqualTo>";
-                }else{
+                } else {
                     $newpart .= "<Or>";
-                    foreach($ids as $id){
+                    foreach ($ids as $id) {
                         $newpart .= "<PropertyIsEqualTo><PropertyName>agency_id</PropertyName><Literal>" . $id . "</Literal></PropertyIsEqualTo>";
                     }
 
@@ -502,12 +528,12 @@ class SimpleWfsApi extends Api
                 $newpart .= "</And></Filter>";
                 array_push($returnQueryString, "Filter=" . urlencode($newpart));
                 $hasfilter = true;
-            }else{
+            } else {
                 array_push($returnQueryString, $value);
             }
         }
 
-        if (!$hasfilter){
+        if (!$hasfilter) {
             $afilter = "agency_id in (" . implode(",", $ids) . ")";
             array_push($returnQueryString, "cql_filter=" . urlencode($afilter));
         }
@@ -515,36 +541,43 @@ class SimpleWfsApi extends Api
         return implode("&", $returnQueryString);
     }
 
-    function getAllowedAgencies(string $dataList, string $typeName, string $mode){
+    function getAllowedAgencies(string $dataList, string $typeName, string $mode)
+    {
         //only single value is supported for typeName at this time = not an array
         $array = json_decode($dataList, TRUE);
         $agencycnt = 0;
-        
+
         $needsagency = false;
         foreach ($array as $json) {
             if ($json['name'] == $typeName) {
-                if ($json['is_agency_secure'] == "t"){
+                if ($json['is_agency_secure'] == "t") {
                     $needsagency = true;
                     break;
                 }
             }
         }
 
-        if (!$needsagency){
+        if (!$needsagency) {
             //have access to everything
             return null;
-        } 
+        }
 
         //otherwise find the agency
         $ids = $this->user->getAgencies($typeName, $mode);
-        if ($ids == null){
+        if ($ids == null) {
             //have access to everything
             return null;
-        }else{
+        } else {
             return $ids;
-            
         }
-        
     }
 
+    function error($code = 403,  $message = "You do not have access to the specified data")
+    {
+        $this->apiResponse->setHttpCode($code);
+        $this->apiResponse->setFormat("application/xml");
+        $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?>
+       <WFSerror><error>' . $message . '</error></WFSerror>');
+        $this->event = "WFS Request Error";
+    }
 }

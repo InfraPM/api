@@ -43,17 +43,9 @@ class SimpleWfsApi extends OwsApi
             $this->user->checkToken();
         }
         if (count($this->apiRequest->getVar) > 0) {
-            if (isset($this->apiRequest->getVar['outputFormat'])) {
-                $this->outputFormat = $this->apiRequest->getVar['outputFormat'];
+            if (isset($this->apiRequest->getVar['outputformat'])) {
+                $this->outputFormat = $this->apiRequest->getVar['outputformat'];
             }
-            // if (isset($this->apiRequest->getVar['token'])) {
-            //     $this->token = $this->apiRequest->getVar['token'];
-            //     $this->user->setToken($this->token);
-            //     $this->user->getUserFromToken();
-            //     $this->user->checkToken();
-            // } //else {
-            //$this->token = '';
-            //}
             if (isset($this->apiRequest->getVar['download'])) {
                 if ($this->apiRequest->getVar['download'] == "true") {
                     $this->download = TRUE;
@@ -63,10 +55,10 @@ class SimpleWfsApi extends OwsApi
             } else {
                 $this->download = FALSE;
             }
-            if (isset($this->apiRequest->getVar['typeNames'])) {
-                $this->typeNames = $this->apiRequest->getVar['typeNames'];
-            } else if (isset($this->apiRequest->getVar['typeName'])) {
-                $this->typeNames = $this->apiRequest->getVar['typeName'];
+            if (isset($this->apiRequest->getVar['typenames'])) {
+                $this->typeNames = $this->apiRequest->getVar['typenames'];
+            } else if (isset($this->apiRequest->getVar['typename'])) {
+                $this->typeNames = $this->apiRequest->getVar['typename'];
             }
             if ($this->token == NULL) {
                 $this->token = '';
@@ -104,7 +96,7 @@ class SimpleWfsApi extends OwsApi
 
         if ($this->request && strtolower($this->request) == 'getcapabilities') {
             $this->dataList = $this->user->getDataList($this->public, "read");
-            $wfsURL = $_ENV['baseGeoserverURL'] . "/" . $_ENV['geoserverWorkspacePrefix'] . "dev/wfs?";
+            $wfsURL = $_ENV['baseGeoserverURL'] . "/wfs?";
             $user = $_ENV['wfsUser'];
             $password = $_ENV['wfsPassword'];
             $encoded = base64_encode($user . ":" . $password);
@@ -172,9 +164,6 @@ class SimpleWfsApi extends OwsApi
                 )
 
             );
-            //var_dump($wfsURL);
-            var_dump($this->apiRequest->postVar);
-            //die();
             $context  = stream_context_create($opts);
             $response = file_get_contents($wfsURL, false, $context);
             $requestBody = $this->apiRequest->postVar;
@@ -276,9 +265,10 @@ class SimpleWfsApi extends OwsApi
         global $baseGeoserverURL, $baseAPIURL;
 
         $finalResponse = str_replace($baseGeoserverURL . "/wfs", $baseAPIURL . "/simplewfs", $response);
+        $finalResponse = str_replace($baseGeoserverURL, $baseAPIURL, $finalResponse);
         if ($this->public == FALSE) {
-            $replaceString = "/ows?token=" . $this->token . "&amp;";
-            $finalResponse = str_replace("/ows?", $replaceString, $finalResponse);
+            $replaceString = "/simplewfs?token=" . $this->token . "&amp;";
+            $finalResponse = str_replace("/simplewfs", $replaceString, $finalResponse);
         }
         $xml = simplexml_load_string($finalResponse);
         $elementCount = 0;

@@ -18,13 +18,9 @@ class OwsApi extends Api
     {
         if (isset($this->apiRequest->getVar['request'])) {
             $this->request = $this->apiRequest->getVar['request'];
-        } else if (isset($this->apiRequest->getVar['REQUEST'])) {
-            $this->request = $this->apiRequest->getVar['REQUEST'];
         }
         if (isset($this->apiRequest->getVar['token'])) {
             $this->token = $this->apiRequest->getVar['token'];
-        } elseif (isset($this->apiRequest->getVar['TOKEN'])) {
-            $this->token = $this->apiRequest->getVar['TOKEN'];
         } else {
             $this->token = 'public';
         }

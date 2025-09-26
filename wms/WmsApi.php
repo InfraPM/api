@@ -25,20 +25,14 @@ class WmsApi extends OwsApi
 
         if (isset($this->apiRequest->getVar['query_layers'])) {
             $this->queryLayers = $this->apiRequest->getVar['query_layers'];
-        } elseif (isset($this->apiRequest->getVar['QUERY_LAYERS'])) {
-            $this->queryLayers = $this->apiRequest->getVar['QUERY_LAYERS'];
         } else {
             $this->queryLayers = NULL;
         }
         if (isset($this->apiRequest->getVar['layers'])) {
             $this->layers = $this->apiRequest->getVar['layers'];
-        } elseif (isset($this->apiRequest->getVar['LAYERS'])) {
-            $this->layers = $this->apiRequest->getVar['LAYERS'];
         } else {
             if (isset($this->apiRequest->getVar['layer'])) {
                 $this->layers = $this->apiRequest->getVar['layer'];
-            } elseif (isset($this->apiRequest->getVar['LAYER'])) {
-                $this->layers = $this->apiRequest->getVar['LAYER'];
             } else {
                 $this->layers = NULL;
             }
@@ -57,11 +51,8 @@ class WmsApi extends OwsApi
         if ($this->public == FALSE) {
             $this->user->setToken($this->token);
             $this->user->getUserFromToken();
-            //$this->user->checkToken();
             $this->dataList = $this->user->getDataList();
         } else {
-            //$this->user->setToken($this->token);
-            //$this->user->getUserFromToken();
             $this->dataList = $this->user->getDataList($this->public);
         }
 

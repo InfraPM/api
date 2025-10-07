@@ -175,7 +175,7 @@ class WmsApi extends OwsApi
                 }
 
                 $response = file_get_contents($requestURL, false, stream_context_create($arrContextOptions));
-                $finalHeader = array_merge($this->parseHeaders(http_get_last_response_headers()), $this->apiResponse->headers);
+                $finalHeader = array_merge($this->parseHeaders($http_response_header), $this->apiResponse->headers);
                 $this->apiResponse->setHeaders($finalHeader);
                 $this->apiResponse->setHttpCode(200);
                 $this->apiResponse->setBody($response);

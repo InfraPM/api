@@ -192,14 +192,7 @@ class SimpleWfsApi extends OwsApi
             $response = file_get_contents($fullURL, false, $context);
             $requestBody = $_SERVER['REQUEST_URI'];
         }
-        $headerArray = array();
-        foreach ($http_response_header as $key => $value) {
-            $curHeader = explode(": ", $value);
-            foreach ($curHeader as $k => $v) {
-                $headerArray[$k] = $v;
-            }
-        }
-        $headerArray = array_merge($this->apiResponse->headers, $headerArray);
+        $headerArray = array_merge($this->apiResponse->headers, $this->parseHeaders(http_get_last_response_headers()));
         $this->apiResponse->setHeaders(array());
         $this->apiResponse->setHeaders($headerArray);
         if ($this->outputFormat == "application/json" && $this->download == TRUE) {

@@ -30,4 +30,22 @@ class OwsApi extends Api
             $this->public = FALSE;
         }
     }
+
+    /**
+     * Converts the array of headers returned by http_get_last_response_headers()
+     * into an associative array.
+     */
+    function parseHeaders($headers)
+    {
+        $head = array();
+        if (!is_array($headers))
+            return $head;
+        foreach ($headers as $k => $v) {
+            $t = explode(':', $v, 2);
+            if (isset($t[1])) {
+                $head[trim($t[0])] = trim($t[1]);
+            }
+        }
+        return $head;
+    }
 }

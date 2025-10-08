@@ -7,7 +7,7 @@ class OwsApi extends Api
     protected $request = NULL;
     protected $token = NULL;
     protected $public = TRUE;
-    protected $dataList = '';
+    protected $dataList = [];
 
     public function __construct()
     {

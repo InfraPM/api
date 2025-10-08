@@ -6,7 +6,8 @@ class ExportAPI extends API
     private $headers;
     private $dataList;
     private $error;
-    private $outputCSvContent;
+    private $dataArray;
+    private $outputCsvContent;
     private $outputCsvFile;
 
     public function __construct()
@@ -43,7 +44,7 @@ class ExportAPI extends API
             $this->user->getUserFromToken();
             $this->user->checkToken();
             if ($this->user->tokenExpired == FALSE) {
-                $this->dataList = $this->user->getDataList(FALSE, "read");
+                $this->dataList = $this->user->getDataList(PermType::User, "read");
                 $originUrl = $_ENV['baseURL'] . "regionalroads.com";
                 $this->headers = array(
                     'Access-Control-Allow-Origin' => $originUrl,
@@ -120,11 +121,10 @@ class ExportAPI extends API
     }
     private function getTableNameFromData($requestedData)
     {
-        $array = json_decode($this->dataList, true);
-        foreach ($array as $json) {
-            $fullDataName = $json['name'];
+        foreach ($this->dataList as $item) {
+            $fullDataName = $item['name'];
             if ($fullDataName == $requestedData) {
-                return '"' . $json['schemaname'] . '"' . "." . '"' . $json['tablename'] . '"';
+                return '"' . $item['schemaname'] . '"' . "." . '"' . $item['tablename'] . '"';
             }
         }
     }

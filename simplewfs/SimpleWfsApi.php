@@ -71,10 +71,10 @@ class SimpleWfsApi extends OwsApi
                 $error = TRUE;
             }
             if ($this->request == 'DescribeFeatureType') {
-                $this->dataList = $this->user->getDataList(FALSE, "read");
+                $this->dataList = $this->user->getDataList(PermType::USER, "read");
                 $this->event = "WFS Describe Feature Request";
             } else if ($this->request == 'GetFeature') {
-                $this->dataList = $this->user->getDataList(FALSE, "read");
+                $this->dataList = $this->user->getDataList(PermType::USER, "read");
                 $this->event = "WFS Get Feature Request";
                 $_SERVER['QUERY_STRING'] = str_replace('typeNames', 'typeName', $_SERVER['QUERY_STRING']);
             }
@@ -82,20 +82,20 @@ class SimpleWfsApi extends OwsApi
         } else {
             $this->typeNames = $this->getDataset();
             if (strpos($this->apiRequest->postVar, "wfs:Update") != FALSE) {
-                $this->dataList = $this->user->getDataList(FALSE, "modify");
+                $this->dataList = $this->user->getDataList(PermType::USER, "modify");
                 $this->event = "WFS Update Feature Request";
             } else if (strpos($this->apiRequest->postVar, "wfs:Insert") != FALSE) {
-                $this->dataList = $this->user->getDataList(FALSE, "insert");
+                $this->dataList = $this->user->getDataList(PermType::USER, "insert");
                 $this->event = "WFS Insert Feature Request";
             } else if (strpos($this->apiRequest->postVar, "wfs:Delete") != FALSE) {
-                $this->dataList = $this->user->getDataList(FALSE, "delete");
+                $this->dataList = $this->user->getDataList(PermType::USER, "delete");
                 $this->event = "WFS Delete Feature Request";
             }
             $errorRequestBody = $this->apiRequest->postVar;
         }
 
         if ($this->request && strtolower($this->request) == 'getcapabilities') {
-            $this->dataList = $this->user->getDataList($this->public, "read");
+            $this->dataList = $this->user->getDataList(PermType::EXTERNAL, "read");
             $wfsURL = $_ENV['baseGeoserverURL'] . "/wfs?";
             $user = $_ENV['wfsUser'];
             $password = $_ENV['wfsPassword'];
@@ -289,7 +289,7 @@ class SimpleWfsApi extends OwsApi
      * filter to Update and Delete actions so users can only
      * update agencies they have permission to access.
      */
-    private function addAgencyFiltersToPostBody(string $dataList, string $typeName)
+    private function addAgencyFiltersToPostBody(array $dataList, string $typeName)
     {
         //agency ids
         $xml = new DOMDocument();
@@ -458,7 +458,7 @@ class SimpleWfsApi extends OwsApi
      * For GET requests updates the cql filter (or replaces it with a FILTER)
      * to prevent access to non agency rescources
      */
-    private function updateCqlFilter(string $queryString, string $dataList, string $typeName): string
+    private function updateCqlFilter(string $queryString, array $dataList, string $typeName): string
     {
         $ids = $this->getAllowedAgencies($dataList, $typeName, 'read');
         //nothing to update
@@ -524,16 +524,13 @@ class SimpleWfsApi extends OwsApi
         return implode("&", $returnQueryString);
     }
 
-    function getAllowedAgencies(string $dataList, string $typeName, string $mode)
+    function getAllowedAgencies(array $dataList, string $typeName, string $mode)
     {
         //only single value is supported for typeName at this time = not an array
-        $array = json_decode($dataList, TRUE);
-        $agencycnt = 0;
-
         $needsagency = false;
-        foreach ($array as $json) {
-            if ($json['name'] == $typeName) {
-                if ($json['is_agency_secure'] == "t") {
+        foreach ($dataList as $item) {
+            if ($item['name'] == $typeName) {
+                if ($item['is_agency_secure'] == "t") {
                     $needsagency = true;
                     break;
                 }

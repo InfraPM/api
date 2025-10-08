@@ -101,11 +101,10 @@ class ForeignKeysApi extends Api
     }
     private function getTableNameFromData($dataList, $requestedData)
     {
-        $array = json_decode($dataList, true);
-        foreach ($array as $json) {
-            $fullDataName = $json['name'];
+        foreach ($dataList as $item) {
+            $fullDataName = $item['name'];
             if ($fullDataName == $requestedData) {
-                return $json['tablename'];
+                return $item['tablename'];
             }
         }
     }

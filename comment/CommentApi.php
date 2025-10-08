@@ -57,7 +57,7 @@ class CommentApi extends Api
         $this->user->setToken($token);
         $this->user->getUserFromToken();
         $this->user->checkToken();
-        $dataList = $this->user->getDataList(FALSE, "read");
+        $dataList = $this->user->getDataList(PermType::User, "read");
         $dataArray = array($dataset);
         if ($this->user->dataAccess($dataList, $dataArray, "", "wfs") != TRUE or $this->user->tokenExpired) {
             $this->apiResponse->setBody('{"error": "You do not have access to the requested data"}');
@@ -144,11 +144,11 @@ EOD;
             $this->user->checkToken();
             $curDataset = $i['data'];
             $dataArray = array($curDataset);
-            $dataList = $this->user->getDataList(FALSE, "comment");
+            $dataList = $this->user->getDataList(PermType::User, "comment");
             $curDataJson = $this->user->getDatalistElement($dataList, $curDataset);
             if ($this->user->dataAccess($dataList, $dataArray, "", "wfs") != TRUE or $this->user->tokenExpired) {
                 $this->apiResponse->setHttpCode(401);
-                $this->apiRepsonse->setBody('{"error": "You do not have access to the requested data"}');
+                $this->apiResponse->setBody('{"error": "You do not have access to the requested data"}');
                 $this->sendResponse();
             }
             $curUserName = $this->user->userName;
@@ -230,14 +230,14 @@ EOD;
             $curType = $i['commentType'];
             $curCommentId = $i['commentId'];
             $curDataset = $this->getDatasetFromComment($curCommentId, $this->commentSchema);
-            $dataList = $this->user->getDataList(FALSE, "comment");
+            $dataList = $this->user->getDataList(PermType::User, "comment");
             $dataArray = array($curDataset);
             $dataJson = $this->user->getDataListElement($dataList, $curDataset);
             $schemaName = $dataJson["schemaname"];
             $this->user->setSpatialDataSchemaName($schemaName);
             if ($this->user->dataAccess($dataList, $dataArray, "", "wfs") != TRUE or $this->user->tokenExpired) {
-                $this->apiResponse->httpCode(401);
-                $this->apiResponse->body('{"error": "You do not have access to the requested data"}');
+                $this->apiResponse->setHttpCode(401);
+                $this->apiResponse->setBody('{"error": "You do not have access to the requested data"}');
             }
             //make copy of row in comments table
             $archiveSql = <<<EOD

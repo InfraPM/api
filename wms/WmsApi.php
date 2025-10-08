@@ -53,7 +53,7 @@ class WmsApi extends OwsApi
             $this->user->getUserFromToken();
             $this->dataList = $this->user->getDataList();
         } else {
-            $this->dataList = $this->user->getDataList($this->public);
+            $this->dataList = $this->user->getDataList(PermType::EXTERNAL);
         }
 
         $requestURL = $_ENV['baseGeoserverURL'] . "/wms?";
@@ -175,7 +175,7 @@ class WmsApi extends OwsApi
                 }
 
                 $response = file_get_contents($requestURL, false, stream_context_create($arrContextOptions));
-                $finalHeader = array_merge($this->parseHeaders(http_get_last_response_headers()), $this->apiResponse->headers);
+                $finalHeader = array_merge($this->parseHeaders($http_response_header), $this->apiResponse->headers);
                 $this->apiResponse->setHeaders($finalHeader);
                 $this->apiResponse->setHttpCode(200);
                 $this->apiResponse->setBody($response);
@@ -189,14 +189,12 @@ class WmsApi extends OwsApi
 
     function updateCqlFilter($dataList, $requestDataArray)
     {
-
         //determine how many of the requested layers require agency filters
-        $array = json_decode($dataList, TRUE);
         $agencycnt = 0;
         foreach ($requestDataArray as $data) {
-            foreach ($array as $json) {
-                if ($json['name'] == $data) {
-                    if ($json['is_agency_secure'] == "t") {
+            foreach ($dataList as $item) {
+                if ($item['name'] == $data) {
+                    if ($item['is_agency_secure'] == "t") {
                         $agencycnt += 1;
                     }
                 }

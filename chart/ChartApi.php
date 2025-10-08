@@ -73,7 +73,7 @@ class ChartApi extends Api
         $this->user->setToken($this->token);
         $this->user->getUserFromToken();
         $this->user->checkToken();
-        $this->dataList = $this->user->getDataList(FALSE, "read");
+        $this->dataList = $this->user->getDataList(PermType::User, "read");
         //var_dump($dataList);
         $dataArray = array($this->viewName);
         //var_dump($dataArray);

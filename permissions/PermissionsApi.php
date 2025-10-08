@@ -24,16 +24,16 @@ class PermissionsApi extends Api
         } else {
             if (isset($this->apiRequest->getVar['mode'])) {
                 $this->mode = $this->apiRequest->getVar['mode'];
-                if (!in_array($this->mode, ['app','data','all'])) {
+                if (!in_array($this->mode, ['app', 'data', 'all'])) {
                     $this->mode = 'data';
                 }
             } else {
                 $this->mode = "data";
             }
-            
-            if (isset($postData['agencyid'])){
+
+            if (isset($postData['agencyid'])) {
                 $this->getPermissions($postData['token'], $postData['agencyid']);
-            }else{
+            } else {
                 $this->getPermissions($postData['token'], null);
             }
         }
@@ -41,7 +41,7 @@ class PermissionsApi extends Api
     /**
      * Retrieve all permissions from the database for the given user
      */
-    public function getPermissions(string $token, string $agencyid = null): void
+    public function getPermissions(string $token, ?string $agencyid = null): void
     {
         //$token = $postData['token'];
         $this->user->setToken($token);
@@ -52,21 +52,20 @@ class PermissionsApi extends Api
             $this->apiResponse->setBody('{"error":"Unathorized"}');
             return;
         }
-        if( ($this->mode == 'all')) {
-            $permissions = $this->user->getPermList(FALSE, null, $agencyid);
+        if (($this->mode == 'all')) {
+            $permissions = $this->user->getPermList(PermType::USER, null, $agencyid);
             $userInfo = array('user_id' => $this->user->userId, 'username' => $this->user->userName);
-            $returnString = json_encode( array('user'=>$userInfo, 'perms'=>$permissions) );
+            $returnString = json_encode(array('user' => $userInfo, 'perms' => $permissions));
         } else {
             if ($this->mode == 'app') {
-                $dataList = $this->user->getAppList(FALSE, "read");
+                $dataList = $this->user->getAppList(PermType::USER, "read");
             } else {
-                $dataList = $this->user->getDataList(FALSE, "read");
+                $dataList = $this->user->getDataList(PermType::USER, "read");
             }
-            $jsonDataList = json_decode($dataList, TRUE);
             $returnString = "{";
             $returnString .= '"read": [';
             $count = 0;
-            foreach ($jsonDataList as $i) {
+            foreach ($dataList as $i) {
                 if ($count > 0) {
                     $returnString .= ",";
                 }
@@ -76,14 +75,13 @@ class PermissionsApi extends Api
             }
             $returnString .= "],";
             if ($this->mode == 'app') {
-                $modifyDataList = $this->user->getAppList(FALSE, "modify");
+                $modifyDataList = $this->user->getAppList(PermType::USER, "modify");
             } else {
-                $modifyDataList = $this->user->getDataList(FALSE, "modify");
+                $modifyDataList = $this->user->getDataList(PermType::USER, "modify");
             }
-            $jsonModifyDataList = json_decode($modifyDataList, TRUE);
             $returnString .= '"modify": [';
             $count = 0;
-            foreach ($jsonModifyDataList as $j) {
+            foreach ($modifyDataList as $j) {
                 if ($count > 0) {
                     $returnString .= ",";
                 }
@@ -92,14 +90,13 @@ class PermissionsApi extends Api
             }
             $returnString .= "],";
             if ($this->mode == 'app') {
-                $deleteDataList = $this->user->getAppList(FALSE, "delete");
+                $deleteDataList = $this->user->getAppList(PermType::USER, "delete");
             } else {
-                $deleteDataList = $this->user->getDataList(FALSE, "delete");
+                $deleteDataList = $this->user->getDataList(PermType::USER, "delete");
             }
-            $jsonDeleteDataList = json_decode($deleteDataList, TRUE);
             $returnString .= '"delete": [';
             $count = 0;
-            foreach ($jsonDeleteDataList as $k) {
+            foreach ($deleteDataList as $k) {
                 if ($count > 0) {
                     $returnString .= ",";
                 }
@@ -108,14 +105,13 @@ class PermissionsApi extends Api
             }
             $returnString .= "],";
             if ($this->mode == 'app') {
-                $insertDataList = $this->user->getAppList(FALSE, "insert");
+                $insertDataList = $this->user->getAppList(PermType::USER, "insert");
             } else {
-                $insertDataList = $this->user->getDataList(FALSE, "insert");
+                $insertDataList = $this->user->getDataList(PermType::USER, "insert");
             }
-            $jsonInsertDataList = json_decode($insertDataList, TRUE);
             $returnString .= '"insert": [';
             $count = 0;
-            foreach ($jsonInsertDataList as $l) {
+            foreach ($insertDataList as $l) {
                 if ($count > 0) {
                     $returnString .= ",";
                 }
@@ -124,14 +120,13 @@ class PermissionsApi extends Api
             }
             $returnString .= "],";
             if ($this->mode == 'app') {
-                $commentDataList = $this->user->getAppList(FALSE, "comment");
+                $commentDataList = $this->user->getAppList(PermType::USER, "comment");
             } else {
-                $commentDataList = $this->user->getDataList(FALSE, "comment");
+                $commentDataList = $this->user->getDataList(PermType::USER, "comment");
             }
-            $jsonCommentDataList = json_decode($commentDataList, TRUE);
             $returnString .= '"comment": [';
             $count = 0;
-            foreach ($jsonCommentDataList as $m) {
+            foreach ($commentDataList as $m) {
                 if ($count > 0) {
                     $returnString .= ",";
                 }

@@ -24,7 +24,7 @@ class PermissionsApi extends Api
         } else {
             if (isset($this->apiRequest->getVar['mode'])) {
                 $this->mode = $this->apiRequest->getVar['mode'];
-                if (!in_array($this->mode, ['app', 'data', 'all'])) {
+                if (!in_array($this->mode, ['app', 'data', 'all', 'useronly'])) {
                     $this->mode = 'data';
                 }
             } else {
@@ -38,6 +38,8 @@ class PermissionsApi extends Api
             }
         }
     }
+
+
     /**
      * Retrieve all permissions from the database for the given user
      */
@@ -52,7 +54,10 @@ class PermissionsApi extends Api
             $this->apiResponse->setBody('{"error":"Unathorized"}');
             return;
         }
-        if (($this->mode == 'all')) {
+        if ($this->mode == 'useronly') {
+            $userInfo = array('user_id' => $this->user->userId, 'username' => $this->user->userName);
+            $returnString = json_encode(array('user' => $userInfo));
+        } else if ($this->mode == 'all') {
             $permissions = $this->user->getPermList(PermType::USER, null, $agencyid);
             $userInfo = array('user_id' => $this->user->userId, 'username' => $this->user->userName);
             $returnString = json_encode(array('user' => $userInfo, 'perms' => $permissions));

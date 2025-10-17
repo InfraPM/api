@@ -39,6 +39,10 @@ class Api
         $this->apiResponse->setHeaders($headers);
     }
 
+    protected function allowAnyOrigin(): void
+    {
+        $this->apiResponse->setHeader('Access-Control-Allow-Origin', '*');
+    }
     /**
      * Set the ApiRequest of the ApiCall
      * 

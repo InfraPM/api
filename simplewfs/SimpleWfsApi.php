@@ -21,6 +21,9 @@ class SimpleWfsApi extends OwsApi
     {
         parent::readRequest();
         if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+            if ($this->public) {
+                $this->allowAnyOrigin();
+            }
             return;
         }
 
@@ -96,6 +99,7 @@ class SimpleWfsApi extends OwsApi
 
         if ($this->request && strtolower($this->request) == 'getcapabilities') {
             $this->dataList = $this->user->getDataList(PermType::EXTERNAL, "read");
+            $this->allowAnyOrigin();
             $wfsURL = $_ENV['baseGeoserverURL'] . "/wfs?";
             $user = $_ENV['wfsUser'];
             $password = $_ENV['wfsPassword'];

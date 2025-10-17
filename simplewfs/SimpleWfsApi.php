@@ -21,6 +21,9 @@ class SimpleWfsApi extends OwsApi
     {
         parent::readRequest();
         if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+            if ($this->public) {
+                $this->allowAnyOrigin();
+            }
             return;
         }
 
@@ -63,18 +66,29 @@ class SimpleWfsApi extends OwsApi
             if ($this->token == NULL) {
                 $this->token = '';
             }
-            $this->user->setToken($this->token);
-            $this->user->getUserFromToken();
-            $this->user->checkToken();
-            if ($this->user->tokenExpired) {
-                $this->error(401, "Token Expired");
-                $error = TRUE;
+            if ($this->public) {
+                if ($this->external) {
+                    $permType = PermType::EXTERNAL;
+                    $this->allowAnyOrigin();
+                } else {
+                    $permType = PermType::PUBLIC;
+                }
+            } else {
+                $permType = PermType::USER;
+                $this->user->setToken($this->token);
+                $this->user->getUserFromToken();
+                $this->user->checkToken();
+                if ($this->user->tokenExpired) {
+                    $this->error(401, "Token Expired");
+                    $error = TRUE;
+                }
             }
+
             if ($this->request == 'DescribeFeatureType') {
-                $this->dataList = $this->user->getDataList(PermType::USER, "read");
+                $this->dataList = $this->user->getDataList($permType, "read");
                 $this->event = "WFS Describe Feature Request";
             } else if ($this->request == 'GetFeature') {
-                $this->dataList = $this->user->getDataList(PermType::USER, "read");
+                $this->dataList = $this->user->getDataList($permType, "read");
                 $this->event = "WFS Get Feature Request";
                 $_SERVER['QUERY_STRING'] = str_replace('typeNames', 'typeName', $_SERVER['QUERY_STRING']);
             }
@@ -96,6 +110,7 @@ class SimpleWfsApi extends OwsApi
 
         if ($this->request && strtolower($this->request) == 'getcapabilities') {
             $this->dataList = $this->user->getDataList(PermType::EXTERNAL, "read");
+            $this->allowAnyOrigin();
             $wfsURL = $_ENV['baseGeoserverURL'] . "/wfs?";
             $user = $_ENV['wfsUser'];
             $password = $_ENV['wfsPassword'];
@@ -118,7 +133,7 @@ class SimpleWfsApi extends OwsApi
         }
 
         $this->workspace = $this->user->getWorkspace($this->dataList, $this->typeNames, $_ENV['geoserverWorkspacePrefix']);
-        if ($this->user->dataAccess($this->dataList, array($this->typeNames), "", "wfs") == FALSE) {
+        if ($this->user->dataAccess($this->dataList, array($this->typeNames), $_ENV['geoserverWorkspacePrefix'], "wfs") == FALSE) {
             $this->error();
             $error = TRUE;
         }

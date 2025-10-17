@@ -9,6 +9,7 @@ class Api
     public $apiRequest;
     protected $dbCon;
     protected $user;
+    protected $external = FALSE;
 
     public function __construct()
     {
@@ -34,11 +35,17 @@ class Api
         );
         if (isset($_SERVER["HTTP_ORIGIN"]) && in_array($_SERVER["HTTP_ORIGIN"], $allowedOrigins)) {
             $headers['Access-Control-Allow-Origin'] = $_SERVER["HTTP_ORIGIN"];
+        } else {
+            $this->external = TRUE;
         }
 
         $this->apiResponse->setHeaders($headers);
     }
 
+    protected function allowAnyOrigin(): void
+    {
+        $this->apiResponse->setHeader('Access-Control-Allow-Origin', '*');
+    }
     /**
      * Set the ApiRequest of the ApiCall
      * 

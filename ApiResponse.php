@@ -47,6 +47,17 @@ class ApiResponse
     {
         $this->headers = $headers;
     }
+
+    /**
+     * Sets the a single header for the response
+     * 
+     * @param array $header The header name
+     * @param array $value The header value
+     */
+    public function setHeader($header, $value): void
+    {
+        $this->headers[$header] = $value;
+    }
     /**
      * Set the HTTP Repsonse code of the API Response
      * 

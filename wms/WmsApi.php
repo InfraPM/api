@@ -54,6 +54,7 @@ class WmsApi extends OwsApi
             $this->dataList = $this->user->getDataList();
         } else {
             $this->dataList = $this->user->getDataList(PermType::EXTERNAL);
+            $this->allowAnyOrigin();
         }
 
         $requestURL = $_ENV['baseGeoserverURL'] . "/wms?";

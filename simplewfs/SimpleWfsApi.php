@@ -134,7 +134,7 @@ class SimpleWfsApi extends OwsApi
         }
 
         $this->workspace = $this->user->getWorkspace($this->dataList, $this->typeNames, $_ENV['geoserverWorkspacePrefix']);
-        if ($this->user->dataAccess($this->dataList, array($this->typeNames), $_ENV['geoserverWorkspacePrefix'], "wfs") == FALSE) {
+        if ($this->user->dataAccess($this->dataList, array($this->typeNames), "", "wfs") == FALSE) {
             $this->error();
             $error = TRUE;
         }

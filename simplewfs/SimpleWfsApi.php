@@ -41,6 +41,7 @@ class SimpleWfsApi extends OwsApi
             $this->user->setToken($this->token);
             $this->user->getUserFromToken();
             $this->user->checkToken();
+            $this->public = FALSE;
         }
         if (count($this->apiRequest->getVar) > 0) {
             if (isset($this->apiRequest->getVar['outputformat'])) {
@@ -268,7 +269,7 @@ class SimpleWfsApi extends OwsApi
         $toDelete = array();
         foreach ($xml->FeatureTypeList->FeatureType as $key1 => $value1) {
             $dataArray = array($value1->Name);
-            if ($this->user->dataAccess($this->dataList, $dataArray, $_ENV['geoserverWorkspacePrefix'], "wfs") == FALSE) {
+            if ($this->user->dataAccess($this->dataList, $dataArray, "", "wfs") == FALSE) {
                 array_push($toDelete, $xml->FeatureTypeList->FeatureType[$elementCount]);
             }
             $elementCount += 1;

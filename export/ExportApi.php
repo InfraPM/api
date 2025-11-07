@@ -62,7 +62,7 @@ class ExportAPI extends API
                 );
                 $csvSql = "";
                 //$dataArray = explode(",", $this->data);
-                if ($this->user->dataAccess($this->dataList, $this->dataArray, "", "wfs") != TRUE) {
+                if ($this->user->dataAccess($this->dataList, $this->dataArray) != TRUE) {
                     $this->error = TRUE;
                     $this->apiResponse->setHttpCode(401);
                     $this->apiResponse->setFormat("application/json");

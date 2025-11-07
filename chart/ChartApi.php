@@ -77,7 +77,7 @@ class ChartApi extends Api
         //var_dump($dataList);
         $dataArray = array($this->viewName);
         //var_dump($dataArray);
-        if ($this->user->dataAccess($this->dataList, $dataArray, '', "wfs") != TRUE or $this->user->tokenExpired) {
+        if ($this->user->dataAccess($this->dataList, $dataArray) != TRUE or $this->user->tokenExpired) {
             $this->apiResponse->setBody('{"error": "You do not have access to the requested data"}');
             $this->apiResponse->setHttpCode(401);
             $this->error = TRUE;

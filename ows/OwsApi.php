@@ -29,6 +29,13 @@ class OwsApi extends Api
         } else {
             $this->public = FALSE;
         }
+
+        if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+            if ($this->public) {
+                $this->allowAnyOrigin();
+            }
+            return;
+        }
     }
 
     /**

@@ -80,6 +80,7 @@ class SimpleWfsApi extends OwsApi
             }
             if (!$this->request) {
                 $this->request = 'getfeature';
+                $_SERVER['QUERY_STRING'] = $_SERVER['QUERY_STRING'] . '&request=GetFeature';
             } else {
                 $this->request = strtolower($this->request);
             }

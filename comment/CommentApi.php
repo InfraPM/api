@@ -59,7 +59,7 @@ class CommentApi extends Api
         $this->user->checkToken();
         $dataList = $this->user->getDataList(PermType::User, "read");
         $dataArray = array($dataset);
-        if ($this->user->dataAccess($dataList, $dataArray, "", "wfs") != TRUE or $this->user->tokenExpired) {
+        if ($this->user->dataAccess($dataList, $dataArray) != TRUE or $this->user->tokenExpired) {
             $this->apiResponse->setBody('{"error": "You do not have access to the requested data"}');
             $this->apiResponse->setHttpCode(401);
             $this->sendResponse();
@@ -146,7 +146,7 @@ EOD;
             $dataArray = array($curDataset);
             $dataList = $this->user->getDataList(PermType::User, "comment");
             $curDataJson = $this->user->getDatalistElement($dataList, $curDataset);
-            if ($this->user->dataAccess($dataList, $dataArray, "", "wfs") != TRUE or $this->user->tokenExpired) {
+            if ($this->user->dataAccess($dataList, $dataArray) != TRUE or $this->user->tokenExpired) {
                 $this->apiResponse->setHttpCode(401);
                 $this->apiResponse->setBody('{"error": "You do not have access to the requested data"}');
                 $this->sendResponse();
@@ -235,7 +235,7 @@ EOD;
             $dataJson = $this->user->getDataListElement($dataList, $curDataset);
             $schemaName = $dataJson["schemaname"];
             $this->user->setSpatialDataSchemaName($schemaName);
-            if ($this->user->dataAccess($dataList, $dataArray, "", "wfs") != TRUE or $this->user->tokenExpired) {
+            if ($this->user->dataAccess($dataList, $dataArray) != TRUE or $this->user->tokenExpired) {
                 $this->apiResponse->setHttpCode(401);
                 $this->apiResponse->setBody('{"error": "You do not have access to the requested data"}');
             }

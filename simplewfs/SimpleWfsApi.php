@@ -20,12 +20,6 @@ class SimpleWfsApi extends OwsApi
     public function readRequest(): void
     {
         parent::readRequest();
-        if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-            if ($this->public) {
-                $this->allowAnyOrigin();
-            }
-            return;
-        }
 
         $error = FALSE;
         $this->outputFormat = "application/xml";
@@ -84,11 +78,16 @@ class SimpleWfsApi extends OwsApi
                     $error = TRUE;
                 }
             }
+            if (!$this->request) {
+                $this->request = 'getfeature';
+            } else {
+                $this->request = strtolower($this->request);
+            }
 
-            if ($this->request == 'DescribeFeatureType') {
+            if ($this->request == 'describefeaturetype') {
                 $this->dataList = $this->user->getDataList($permType, "read");
                 $this->event = "WFS Describe Feature Request";
-            } else if ($this->request == 'GetFeature') {
+            } else if ($this->request == 'getfeature') {
                 $this->dataList = $this->user->getDataList($permType, "read");
                 $this->event = "WFS Get Feature Request";
                 $_SERVER['QUERY_STRING'] = str_replace('typeNames', 'typeName', $_SERVER['QUERY_STRING']);
@@ -109,7 +108,7 @@ class SimpleWfsApi extends OwsApi
             $errorRequestBody = $this->apiRequest->postVar;
         }
 
-        if ($this->request && strtolower($this->request) == 'getcapabilities') {
+        if ($this->request == 'getcapabilities') {
             $this->dataList = $this->user->getDataList(PermType::EXTERNAL, "read");
             $this->allowAnyOrigin();
             $wfsURL = $_ENV['baseGeoserverURL'] . "/wfs?";
@@ -134,7 +133,7 @@ class SimpleWfsApi extends OwsApi
         }
 
         $this->workspace = $this->user->getWorkspace($this->dataList, $this->typeNames, $_ENV['geoserverWorkspacePrefix']);
-        if ($this->user->dataAccess($this->dataList, array($this->typeNames), "", "wfs") == FALSE) {
+        if ($this->user->dataAccess($this->dataList, array($this->typeNames)) == FALSE) {
             $this->error();
             $error = TRUE;
         }
@@ -212,11 +211,11 @@ class SimpleWfsApi extends OwsApi
         $this->apiResponse->setHeaders(array());
         $this->apiResponse->setHeaders($headerArray);
         if ($this->outputFormat == "application/json" && $this->download == TRUE) {
-            header('Content-Disposition: attachment; filename=' . $this->typeNames . '.json');
+            $this->apiResponse->setHeader('Content-Disposition', 'attachment; filename=' . $this->typeNames . '.json');
         } else if ($this->outputFormat == "application/vnd.google-earth.kml xml" && $this->download == TRUE) {
-            header('Content-Disposition: attachment; filename=' . $this->typeNames . '.kml');
+            $this->apiResponse->setHeader('Content-Disposition', 'attachment; filename=' . $this->typeNames . '.kml');
         } else if ($this->outputFormat == "shape-zip" && $this->download == TRUE) {
-            header('Content-Disposition: attachment; filename=' . $this->typeNames . '.zip');
+            $this->apiResponse->setHeader('Content-Disposition', 'attachment; filename=' . $this->typeNames . '.zip');
         }
         $this->apiResponse->setHttpCode(200);
         $this->apiResponse->setBody($response);
@@ -282,10 +281,15 @@ class SimpleWfsApi extends OwsApi
         $xml = simplexml_load_string($finalResponse);
         $elementCount = 0;
         $toDelete = array();
+
         foreach ($xml->FeatureTypeList->FeatureType as $key1 => $value1) {
             $dataArray = array($value1->Name);
-            if ($this->user->dataAccess($this->dataList, $dataArray, "", "wfs") == FALSE) {
+            if ($this->user->dataAccess($this->dataList, $dataArray) == FALSE) {
                 array_push($toDelete, $xml->FeatureTypeList->FeatureType[$elementCount]);
+            } else {
+                // remove the namespace prefix from the name
+                $parts = explode(':', $value1->Name, 2);
+                if (count($parts) > 1) $value1->Name = $parts[1];
             }
             $elementCount += 1;
         }

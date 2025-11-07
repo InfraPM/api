@@ -5,7 +5,6 @@ require __DIR__ . '/../ows/OwsApi.php';
 class WmsApi extends OwsApi
 {
     private $layers;
-    private $workspace;
     private $parameters;
     private $cqlfilter;
     private $queryLayers;
@@ -48,14 +47,24 @@ class WmsApi extends OwsApi
             return;
         }
 
-        if ($this->public == FALSE) {
+        if ($this->public) {
+            if ($this->external) {
+                $permType = PermType::EXTERNAL;
+                $this->allowAnyOrigin();
+            } else {
+                $permType = PermType::PUBLIC;
+            }
+        } else {
+            $permType = PermType::USER;
             $this->user->setToken($this->token);
             $this->user->getUserFromToken();
-            $this->dataList = $this->user->getDataList();
-        } else {
-            $this->dataList = $this->user->getDataList(PermType::EXTERNAL);
-            $this->allowAnyOrigin();
+            $this->user->checkToken();
+            if ($this->user->tokenExpired) {
+                $this->error(401, "Token Expired");
+                $error = TRUE;
+            }
         }
+        $this->dataList = $this->user->getDataList($permType, "read");
 
         $requestURL = $_ENV['baseGeoserverURL'] . "/wms?";
         $arrContextOptions = array(
@@ -94,11 +103,10 @@ class WmsApi extends OwsApi
             foreach ($requestedDataArray as $data) {
                 $colonPos = strpos($data, ":");
                 if ($colonPos != FALSE) {
-                    $this->workspace = $_ENV['geoserverWorkspacePrefix'] . substr($data, 0, $colonPos);
                     array_push($finalRequestedDataArray, $data);
                 } else {
-                    $this->workspace = $this->user->getWorkspace($this->dataList, substr($data, $colonPos), $_ENV['geoserverWorkspacePrefix']);
-                    $formattedString = $this->workspace . ":" . substr($data, $colonPos);
+                    $workspace = $this->user->getWorkspace($this->dataList, substr($data, $colonPos), $_ENV['geoserverWorkspacePrefix']);
+                    $formattedString = $workspace . ":" . substr($data, $colonPos);
                     array_push($finalRequestedDataArray, $formattedString);
                 }
             }
@@ -162,7 +170,7 @@ class WmsApi extends OwsApi
 
             $this->user->checkToken();
             if (
-                $this->user->dataAccess($this->dataList, $finalRequestedDataArray, $_ENV['geoserverWorkspacePrefix'], "wms")
+                $this->user->dataAccess($this->dataList, $finalRequestedDataArray)
                 && ($this->user->tokenExpired == FALSE || $this->public == TRUE)
             ) {
 
@@ -260,8 +268,12 @@ class WmsApi extends OwsApi
         $toDelete = array();
         foreach ($xml->Capability->Layer->Layer as $key1 => $value1) {
             $dataArray = array($value1->Name);
-            if ($this->user->dataAccess($this->dataList, $dataArray, $_ENV['geoserverWorkspacePrefix'], "wms") == FALSE) {
+            if ($this->user->dataAccess($this->dataList, $dataArray) == FALSE) {
                 array_push($toDelete, $xml->Capability->Layer->Layer[$elementCount]);
+            } else {
+                // remove the namespace prefix from the name
+                $parts = explode(':', $value1->Name, 2);
+                if (count($parts) > 1) $value1->Name = $parts[1];
             }
             $elementCount += 1;
         }

@@ -260,8 +260,10 @@ class WmsApi extends OwsApi
 
         $finalResponse = str_replace($baseGeoserverURL, $baseAPIURL, $response);
         if ($this->public == FALSE) {
-            $replaceString = "/ows?token=" . $this->token . "&amp;";
+            $replaceString = "/ows/?token=" . $this->token . "&amp;";
             $finalResponse = str_replace("/ows?", $replaceString, $finalResponse);
+        } else {
+            $finalResponse = str_replace("/ows?", "/ows/?", $finalResponse);
         }
         $xml = simplexml_load_string($finalResponse);
         $elementCount = 0;

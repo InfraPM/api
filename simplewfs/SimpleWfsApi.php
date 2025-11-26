@@ -34,7 +34,7 @@ class SimpleWfsApi extends OwsApi
                 $error = TRUE;
             }
         }
-        if ($this->token != NULL) {
+        if ($this->token != 'public') {
             $this->user->setToken($this->token);
             $this->user->getUserFromToken();
             $this->user->checkToken();

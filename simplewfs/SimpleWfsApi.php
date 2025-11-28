@@ -9,6 +9,7 @@ class SimpleWfsApi extends OwsApi
     private $download;
     private $event;
     private $workspace;
+    private $errorRequestBody;
 
     public function __construct()
     {
@@ -31,7 +32,7 @@ class SimpleWfsApi extends OwsApi
                 $this->token = $postData[0];
             } else {
                 $this->error();
-                $error = TRUE;
+                return;
             }
         }
         if ($this->token != 'public') {
@@ -75,7 +76,7 @@ class SimpleWfsApi extends OwsApi
                 $this->user->checkToken();
                 if ($this->user->tokenExpired) {
                     $this->error(401, "Token Expired");
-                    $error = TRUE;
+                    return;
                 }
             }
             if (!$this->request) {
@@ -93,9 +94,13 @@ class SimpleWfsApi extends OwsApi
                 $this->event = "WFS Get Feature Request";
                 $_SERVER['QUERY_STRING'] = str_replace('typeNames', 'typeName', $_SERVER['QUERY_STRING']);
             }
-            $errorRequestBody = $_SERVER['REQUEST_URI'];
+            $this->errorRequestBody = $_SERVER['REQUEST_URI'];
         } else {
             $this->typeNames = $this->getDataset();
+            if ($this->typeNames == null) {
+                $this->error(400, "Invalid request, missing parameters");
+                return;
+            }
             if (strpos($this->apiRequest->postVar, "wfs:Update") != FALSE) {
                 $this->dataList = $this->user->getDataList(PermType::USER, "modify");
                 $this->event = "WFS Update Feature Request";
@@ -106,7 +111,7 @@ class SimpleWfsApi extends OwsApi
                 $this->dataList = $this->user->getDataList(PermType::USER, "delete");
                 $this->event = "WFS Delete Feature Request";
             }
-            $errorRequestBody = $this->apiRequest->postVar;
+            $this->errorRequestBody = $this->apiRequest->postVar;
         }
 
         if ($this->request == 'getcapabilities') {
@@ -136,15 +141,11 @@ class SimpleWfsApi extends OwsApi
         $this->workspace = $this->user->getWorkspace($this->dataList, $this->typeNames, $_ENV['geoserverWorkspacePrefix']);
         if ($this->user->dataAccess($this->dataList, array($this->typeNames)) == FALSE) {
             $this->error();
-            $error = TRUE;
+            return;
         }
 
-        if ($error == FALSE) {
-            $this->apiResponse->setFormat($this->outputFormat);
-            $this->generateResponse();
-        } else {
-            $this->user->logEvent($this->event, $errorRequestBody);
-        }
+        $this->apiResponse->setFormat($this->outputFormat);
+        $this->generateResponse();
     }
     /**
      * Generate API Response
@@ -161,7 +162,6 @@ class SimpleWfsApi extends OwsApi
             $errorMsg = $this->addAgencyFiltersToPostBody($this->dataList, $this->typeNames);
             if ($errorMsg) {
                 $this->error(403, $errorMsg);
-                //$this->user->logEvent($this->event, $errorMsg);
                 return;
             }
 
@@ -226,7 +226,7 @@ class SimpleWfsApi extends OwsApi
     /**
      * Return the dataset name from the current WFST POST request
      */
-    private function getDataset(): string
+    private function getDataset(): ?string
     {
         $mode = "Insert";
         $startTag = "<wfs:Insert>";
@@ -250,6 +250,7 @@ class SimpleWfsApi extends OwsApi
             $startIndex = strpos($this->apiRequest->postVar, $startTag);
             $endIndex = strpos($this->apiRequest->postVar, $endTag) + $endTagLen;
         }
+        if ($startIndex == FALSE) return null;
         $length = strlen($this->apiRequest->postVar) - $startIndex - (strlen($this->apiRequest->postVar) - $endIndex);
         $subString = substr($this->apiRequest->postVar, $startIndex, $length);
         $xml = simplexml_load_string($subString, SimpleXMLElement::class, LIBXML_NOWARNING | LIBXML_NOERROR);
@@ -580,5 +581,6 @@ class SimpleWfsApi extends OwsApi
         $this->apiResponse->setBody('<?xml version="1.0" encoding="UTF-8"?>
        <WFSerror><error>' . $message . '</error></WFSerror>');
         $this->event = "WFS Request Error";
+        $this->user->logEvent($this->event, $this->errorRequestBody);
     }
 }

@@ -61,7 +61,7 @@ class WmsApi extends OwsApi
             $this->user->checkToken();
             if ($this->user->tokenExpired) {
                 $this->error(401, "Token Expired");
-                $error = TRUE;
+                return;
             }
         }
         $this->dataList = $this->user->getDataList($permType, "read");

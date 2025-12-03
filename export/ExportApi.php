@@ -44,7 +44,7 @@ class ExportAPI extends API
             $this->user->getUserFromToken();
             $this->user->checkToken();
             if ($this->user->tokenExpired == FALSE) {
-                $this->dataList = $this->user->getDataList(PermType::User, "read");
+                $this->dataList = $this->user->getDataList(PermType::USER, "read");
                 $originUrl = $_ENV['baseURL'] . "regionalroads.com";
                 $this->headers = array(
                     'Access-Control-Allow-Origin' => $originUrl,
